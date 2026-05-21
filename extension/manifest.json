@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "Capturador Visual",
+  "version": "1.0.0",
+  "description": "Ctrl+Click para capturar producto y enviarlo al cotizador.",
+  "permissions": ["activeTab", "scripting"],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

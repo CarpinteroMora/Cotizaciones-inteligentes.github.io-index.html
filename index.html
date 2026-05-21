@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cotización 2026 — Mora Carpintería</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: { colors: { mora: { red: '#c41e3a' } } } } } };
+  </script>
+  <style>
+    @media print { .no-print { display: none !important; } }
+    #cotizacion-pdf { font-family: Arial, Helvetica, sans-serif; }
+    #cotizacion-pdf table { border-collapse: collapse; width: 100%; }
+    #cotizacion-pdf th, #cotizacion-pdf td { border: 1px solid #333; padding: 4px 6px; font-size: 11px; }
+    #cotizacion-pdf .pdf-title { font-size: 28px; font-weight: bold; letter-spacing: 2px; }
+    .item-section.active-item { box-shadow: 0 0 0 2px #c41e3a; }
+    .modal-open { display: flex !important; }
+    .mat-detalle { cursor: pointer; }
+    .mat-detalle:hover { background: #fff8e1; }
+    .mat-cell-wrap { position: relative; }
+    .precio-sugerencia {
+      display: none; position: absolute; left: 0; top: 100%; z-index: 30; margin-top: 2px;
+      padding: 4px 8px; font-size: 10px; line-height: 1.3; white-space: nowrap;
+      background: #eff6ff; border: 1px solid #93c5fd; border-radius: 6px;
+      color: #1e40af; box-shadow: 0 2px 8px rgba(0,0,0,.12); cursor: pointer;
+    }
+    .precio-sugerencia.visible { display: block; }
+    .precio-sugerencia:hover { background: #dbeafe; }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-900 min-h-screen">
+
+  <div id="app" class="max-w-5xl mx-auto p-4 sm:p-6 space-y-6">
+
+    <header class="bg-white rounded-lg shadow border overflow-hidden">
+      <div class="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 border-b-4 border-mora-red">
+        <div>
+          <div class="text-4xl font-black text-mora-red leading-none">MORA</div>
+          <p class="text-xs text-gray-600">CarpinteroMora@gmail.com · +56 9 50193837</p>
+        </div>
+        <div class="flex-1 text-center sm:pt-2">
+          <h1 class="text-2xl sm:text-3xl font-bold tracking-widest">COTIZACIÓN</h1>
+        </div>
+        <div class="sm:w-56 flex flex-col gap-2">
+          <label class="text-xs font-semibold text-gray-500 uppercase">Número</label>
+          <input type="text" id="numero" class="w-full border-b-2 border-gray-800 py-1 font-semibold focus:outline-none focus:border-mora-red">
+          <button type="button" id="btn-siguiente-header" class="no-print text-xs px-2 py-1.5 bg-mora-red text-white rounded-lg font-semibold hover:bg-red-700">🔄 Siguiente Cotización</button>
+        </div>
+      </div>
+      <div class="p-4 sm:p-6 grid gap-3 sm:grid-cols-2">
+        <div><label class="text-sm font-semibold">Atención a</label>
+          <input type="text" id="atencionA" class="w-full border-b py-1 focus:outline-none focus:border-mora-red"></div>
+        <div><label class="text-sm font-semibold">Obra</label>
+          <input type="text" id="obra" class="w-full border-b py-1 focus:outline-none focus:border-mora-red"></div>
+        <div><label class="text-sm font-semibold">Fecha</label>
+          <input type="date" id="fecha" class="w-full border-b py-1 focus:outline-none focus:border-mora-red"></div>
+      </div>
+    </header>
+
+    <div id="items-container" class="space-y-4"></div>
+
+    <section class="bg-white rounded-lg shadow border p-4 sm:p-6">
+      <div class="grid lg:grid-cols-2 gap-6">
+        <div>
+          <h2 class="text-sm font-bold uppercase text-gray-500 mb-3">Condiciones comerciales</h2>
+          <dl class="text-sm space-y-2">
+            <div class="flex justify-between border-b py-2"><dt class="font-semibold">Plazo</dt><dd>5 días hábiles</dd></div>
+            <div class="flex justify-between border-b py-2"><dt class="font-semibold">Garantía</dt><dd>6 meses</dd></div>
+            <div class="flex justify-between py-2"><dt class="font-semibold">Anticipo</dt><dd>50% inicio faena</dd></div>
+          </dl>
+        </div>
+        <div class="lg:text-right">
+          <h2 class="text-sm font-bold uppercase text-gray-500 mb-3">Totales</h2>
+          <div class="space-y-2 max-w-xs lg:ml-auto text-sm">
+            <div class="flex justify-between py-2 border-b font-bold"><span>NETO</span><span id="display-neto" class="font-mono text-lg">$0</span></div>
+            <p class="text-xs text-gray-500">Transportes ref.: <span id="display-transportes" class="font-mono">$0</span></p>
+            <div class="flex justify-between py-2 border-b font-bold"><span>IVA (19%)</span><span id="display-iva" class="font-mono">$0</span></div>
+            <div class="flex justify-between py-3 bg-mora-red/10 rounded px-2 font-bold text-lg">
+              <span>TOTAL</span><span id="display-total" class="font-mono text-mora-red">$0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="bg-white rounded-lg shadow border p-4 sm:p-6 no-print">
+      <h2 class="font-bold mb-2">Documentación de Obra</h2>
+      <input type="file" id="doc-files" multiple accept="image/*,video/*,.pdf,.dwg,.dxf,.doc,.docx"
+        class="text-sm file:mr-3 file:py-2 file:px-4 file:rounded file:border-0 file:bg-mora-red file:text-white file:font-semibold">
+      <ul id="doc-list" class="mt-3 space-y-2 text-sm"></ul>
+    </section>
+
+    <div class="flex flex-wrap gap-3 justify-center sticky bottom-4 z-10 no-print pb-2">
+      <button type="button" id="btn-siguiente" class="px-4 py-2.5 bg-emerald-700 text-white rounded-lg font-semibold text-sm hover:bg-emerald-800 shadow">🔄 Siguiente Cotización</button>
+      <button type="button" id="btn-proveedores" class="px-4 py-2.5 bg-white border rounded-lg font-semibold text-sm shadow hover:bg-gray-50">⚙ Mis Proveedores</button>
+      <button type="button" id="btn-export" class="px-4 py-2.5 bg-gray-800 text-white rounded-lg font-semibold text-sm hover:bg-gray-700 shadow">Exportar JSON</button>
+      <label class="px-4 py-2.5 bg-gray-600 text-white rounded-lg font-semibold text-sm shadow cursor-pointer hover:bg-gray-500">
+        Cargar JSON<input type="file" id="btn-import" accept=".json" class="hidden">
+      </label>
+      <button type="button" id="btn-pdf" class="px-4 py-2.5 bg-mora-red text-white rounded-lg font-semibold text-sm hover:bg-red-700 shadow">Generar PDF</button>
+    </div>
+  </div>
+
+  <div id="modal-parse" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 no-print">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col max-h-[85vh]">
+      <div class="flex justify-between items-center p-4 border-b">
+        <h3 class="font-bold">Caja de parseo — Detalle</h3>
+        <button type="button" class="modal-parse-close text-2xl text-gray-400">&times;</button>
+      </div>
+      <p class="px-4 pt-2 text-xs text-gray-500">Pega el texto copiado del proveedor (Ctrl+C) y procesa.</p>
+      <textarea id="parse-raw" rows="10" class="mx-4 mt-2 p-3 border rounded text-sm font-mono flex-1 min-h-[160px] focus:ring-1 focus:ring-mora-red focus:outline-none" placeholder="Pegar bloque de texto aquí…"></textarea>
+      <div class="p-4 flex gap-3 justify-end border-t bg-gray-50 rounded-b-xl">
+        <button type="button" class="modal-parse-close px-4 py-2 rounded-lg border border-gray-300 bg-white text-gray-700 text-sm font-medium shadow-sm hover:bg-gray-100">
+          Cancelar
+        </button>
+        <button type="button" id="parse-inject"
+          class="px-4 py-2 rounded-lg shadow-md bg-green-600 text-white font-semibold text-sm border-0 opacity-100 transition-colors duration-150 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2">
+          Procesar e Inyectar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="modal-picker" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 no-print">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-md max-h-[80vh] flex flex-col">
+      <div class="flex justify-between p-4 border-b">
+        <h3 class="font-bold">Buscar en proveedor — Ítem <span id="picker-item">1</span></h3>
+        <button type="button" class="modal-picker-close text-2xl text-gray-400">&times;</button>
+      </div>
+      <ul id="picker-list" class="p-4 overflow-y-auto space-y-2 flex-1"></ul>
+      <p id="picker-empty" class="hidden p-4 text-sm text-amber-700">Configura proveedores en ⚙ Mis Proveedores.</p>
+    </div>
+  </div>
+
+  <div id="modal-prov-config" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 no-print">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
+      <div class="flex justify-between p-4 border-b">
+        <h3 class="font-bold">Mis Proveedores</h3>
+        <button type="button" class="modal-prov-close text-2xl text-gray-400">&times;</button>
+      </div>
+      <form id="form-prov" class="p-4 border-b bg-gray-50 space-y-3">
+        <div><label class="text-sm font-semibold">Nombre</label>
+          <input type="text" id="prov-nombre" required class="w-full border rounded px-3 py-2 mt-1 text-sm"></div>
+        <div><label class="text-sm font-semibold">URL</label>
+          <input type="url" id="prov-url" required placeholder="https://…" class="w-full border rounded px-3 py-2 mt-1 text-sm"></div>
+        <button type="submit" class="w-full py-2 bg-mora-red text-white rounded-lg font-semibold text-sm">Añadir</button>
+      </form>
+      <ul id="prov-list" class="p-4 overflow-y-auto flex-1 space-y-2"></ul>
+    </div>
+  </div>
+
+  <div class="fixed left-[-9999px] w-[210mm]">
+    <div id="cotizacion-pdf" class="bg-white p-8 text-black" style="width:210mm"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script>
+(function () {
+  'use strict';
+
+  const ITEM_COUNT = 7;
+  const IVA = 0.19;
+  const LS_NUM = 'cotizador_ultimo_numero';
+  const LS_PROV = 'cotizador_proveedores';
+  const LS_CTX = 'cotizador_ctx';
+  const LS_INVENTARIO = 'inventario_precios';
+  const MAX_DIAS_PRECIO = 30;
+
+  const FAMILIAS_ASOC = [
+    {
+      trigger: /\btubo\s+pvc\b/i,
+      medida: (t) => (t.match(/(\d+)\s*(?:mm|"|''|pulg)?/i) || [])[1] || '',
+      piezas: (m) => [
+        m ? `Codo PVC ${m}°` : 'Codo PVC 90°',
+        m ? `Tee PVC ${m}` : 'Tee PVC',
+        m ? `Copla PVC ${m}` : 'Copla PVC',
+        'Pegamento PVC',
+        m ? `Reducción PVC ${m}` : 'Reducción PVC'
+      ]
+    },
+    {
+      trigger: /\bterrazas?\s+pin[oó]\b/i,
+      medida: (t) => (t.match(/(\d+)\s*x\s*(\d+)/i) || [])[0] || '',
+      piezas: (m) => [
+        'Barniz Marino Terraza',
+        'Taco Terraza Acero',
+        'Tornillo Terraza Inox',
+        m ? `Tabla Terraza ${m}` : 'Tabla Terraza Pino'
+      ]
+    },
+    {
+      trigger: /\bplancha\s+(?:osb|contrachapado|plywood|triplay)\b/i,
+      medida: (t) => (t.match(/(\d+(?:[.,]\d+)?)\s*(?:mm|cm)?/i) || [])[1] || '',
+      piezas: (m) => [
+        m ? `Tirante ${m} mm` : 'Tirante estructural',
+        'Clavo punta Paris',
+        'Cola Foliar',
+        'Cinta junta plancha'
+      ]
+    },
+    {
+      trigger: /\bcer[aá]mica|porcelanato|gres\b/i,
+      medida: () => '',
+      piezas: () => [
+        'Pegamento porcelanato',
+        'Pastina',
+        'Separador cerámico',
+        'Cortante diamante'
+      ]
+    }
+  ];
+
+  let activeItem = 0;
+  let pickerItem = 0;
+  let parseTargetRow = null;
+  let documentacion = [];
+
+  const DEFAULT_PROV = [
+    { nombre: 'Sodimac', url: 'https://sodimac.falabella.com' },
+    { nombre: 'Easy', url: 'https://www.easy.cl' }
+  ];
+
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  const fmt = (n) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Math.round(n) || 0);
+  const parseNum = (v) => { const n = parseFloat(String(v).replace(/[^\d.,-]/g,'').replace(',','.')); return isNaN(n) ? 0 : n; };
+  const calc = (a, b) => parseNum(a) * parseNum(b);
+
+  function currentYear() { return new Date().getFullYear(); }
+  function parseNumero(s) {
+    const m = String(s || '').trim().match(/^(\d{4})-(\d+)$/);
+    return m ? { year: +m[1], correlativo: +m[2] } : null;
+  }
+  function formatNumero(y, c) { return `${y}-${String(c).padStart(4,'0')}`; }
+
+  function resolveNumeroInicial() {
+    const y = currentYear();
+    const raw = localStorage.getItem(LS_NUM);
+    const p = parseNumero(raw);
+    if (!p) return formatNumero(y, 1);
+    return p.year !== y ? formatNumero(y, 1) : formatNumero(p.year, p.correlativo);
+  }
+
+  function incrementNumero(str) {
+    const y = currentYear();
+    const p = parseNumero(str) || { year: y, correlativo: 0 };
+    const year = p.year !== y ? y : p.year;
+    const cor = p.year !== y ? 0 : p.correlativo;
+    return formatNumero(year, cor + 1);
+  }
+
+  function initNumeracion() {
+    const n = resolveNumeroInicial();
+    $('#numero').value = n;
+    if (!localStorage.getItem(LS_NUM)) localStorage.setItem(LS_NUM, n);
+  }
+
+  function siguienteCotizacion() {
+    if (!confirm('¿Finalizar y abrir nueva cotización con el siguiente número?')) return;
+    const next = incrementNumero($('#numero').value);
+    localStorage.setItem(LS_NUM, next);
+    resetForm(next);
+  }
+
+  function resetForm(numero) {
+    $('#atencionA').value = '';
+    $('#obra').value = '';
+    $('#fecha').value = new Date().toISOString().slice(0, 10);
+    $('#numero').value = numero;
+    documentacion = [];
+    renderDocs();
+    $$('.item-section').forEach((sec) => {
+      $('.item-descripcion', sec).value = '';
+      $('.item-transportes', sec).value = '';
+      $('.mat-tbody', sec).innerHTML = '';
+      $('.mo-tbody', sec).innerHTML = '';
+    });
+    setActiveItem(0);
+    recalc();
+  }
+
+  function getProveedores() {
+    try {
+      const l = JSON.parse(localStorage.getItem(LS_PROV) || '[]');
+      return Array.isArray(l) && l.length ? l : [...DEFAULT_PROV];
+    } catch { return [...DEFAULT_PROV]; }
+  }
+
+  function getCtx() {
+    try { return JSON.parse(localStorage.getItem(LS_CTX) || 'null'); } catch { return null; }
+  }
+
+  function setCtx(itemNumero, proveedor) {
+    const ctx = { itemNumero, proveedor, ts: Date.now() };
+    localStorage.setItem(LS_CTX, JSON.stringify(ctx));
+  }
+
+  function setActiveItem(i) {
+    activeItem = i;
+    $$('.item-section').forEach((el, idx) => el.classList.toggle('active-item', idx === i));
+  }
+
+  function bindRow(tr, sel) {
+    tr.querySelector('.row-del')?.addEventListener('click', () => { tr.remove(); recalc(); });
+    tr.addEventListener('input', (e) => { if (e.target.matches(sel)) recalc(); });
+  }
+
+  function getInventario() {
+    try {
+      const o = JSON.parse(localStorage.getItem(LS_INVENTARIO) || '{}');
+      return o && typeof o === 'object' ? o : {};
+    } catch { return {}; }
+  }
+
+  function setInventario(inv) {
+    localStorage.setItem(LS_INVENTARIO, JSON.stringify(inv));
+  }
+
+  function claveInventario(sku, detalle) {
+    const s = (sku || '').trim().toUpperCase();
+    if (s.length >= 3) return 'sku:' + s;
+    const d = (detalle || '').trim().toLowerCase().replace(/\s+/g, ' ');
+    if (d.length >= 3) return 'det:' + d.slice(0, 100);
+    return null;
+  }
+
+  function diasDesde(ts) {
+    const t = Number(ts) || 0;
+    if (!t) return 9999;
+    return Math.floor((Date.now() - t) / 86400000);
+  }
+
+  function guardarEnInventario(sku, detalle, precio, proveedor) {
+    const p = parseNum(precio);
+    const det = (detalle || '').trim();
+    const sk = (sku || '').trim();
+    if ((!det && !sk) || p <= 0) return;
+    const key = claveInventario(sk, det);
+    if (!key) return;
+    const inv = getInventario();
+    inv[key] = { sku: sk, detalle: det, precio: p, proveedor: (proveedor || '').trim(), fecha_actualizacion: Date.now() };
+    setInventario(inv);
+  }
+
+  function guardarFilaEnInventario(tr) {
+    guardarEnInventario($('.mat-sku', tr)?.value, $('.mat-detalle', tr)?.value, $('.mat-valor', tr)?.value, $('.mat-proveedor', tr)?.value);
+  }
+
+  function buscarInventarioVivo(sku, detalle) {
+    const inv = getInventario();
+    const qSku = (sku || '').trim().toUpperCase();
+    const qDet = (detalle || '').trim().toLowerCase();
+    if (qSku.length < 2 && qDet.length < 3) return null;
+    let mejor = null;
+    Object.values(inv).forEach((item) => {
+      const dias = diasDesde(item.fecha_actualizacion);
+      if (dias > MAX_DIAS_PRECIO) return;
+      let score = 0;
+      const iSku = (item.sku || '').toUpperCase();
+      const iDet = (item.detalle || '').toLowerCase();
+      if (qSku.length >= 2 && iSku) {
+        if (iSku === qSku) score += 20;
+        else if (iSku.includes(qSku) || qSku.includes(iSku)) score += 12;
+      }
+      if (qDet.length >= 3 && iDet) {
+        if (iDet === qDet) score += 15;
+        else if (iDet.includes(qDet) || qDet.includes(iDet.slice(0, Math.max(qDet.length, 8)))) score += 8;
+      }
+      if (score > 0 && (!mejor || score > mejor.score)) mejor = { ...item, dias, score };
+    });
+    return mejor;
+  }
+
+  function ocultarSugerencia(tr) {
+    const h = tr.querySelector('.precio-sugerencia');
+    if (h) { h.classList.remove('visible'); h._item = null; }
+  }
+
+  function getHintEl(tr) {
+    let h = tr.querySelector('.precio-sugerencia');
+    if (!h) {
+      h = document.createElement('div');
+      h.className = 'precio-sugerencia no-print';
+      $('.mat-cell-detalle', tr)?.appendChild(h);
+    }
+    return h;
+  }
+
+  function mostrarSugerenciaPrecio(tr) {
+    const hit = buscarInventarioVivo($('.mat-sku', tr)?.value, $('.mat-detalle', tr)?.value);
+    const hint = getHintEl(tr);
+    if (!hit) { ocultarSugerencia(tr); return; }
+    hint._item = hit;
+    hint.textContent = `Sugerido: ${fmt(hit.precio)} (Hace ${hit.dias} día${hit.dias === 1 ? '' : 's'})`;
+    hint.classList.add('visible');
+    hint.onclick = () => aplicarSugerenciaInventario(tr);
+  }
+
+  function aplicarSugerenciaInventario(tr) {
+    const hit = tr.querySelector('.precio-sugerencia')?._item;
+    if (!hit) return;
+    if (hit.sku) $('.mat-sku', tr).value = hit.sku;
+    if (hit.detalle) $('.mat-detalle', tr).value = hit.detalle;
+    if (hit.precio) $('.mat-valor', tr).value = hit.precio;
+    if (hit.proveedor) $('.mat-proveedor', tr).value = hit.proveedor;
+    ocultarSugerencia(tr);
+    recalc();
+    $('.mat-cantidad', tr)?.focus();
+  }
+
+  function sugerenciasAsociacion(detalleAnterior) {
+    const t = (detalleAnterior || '').trim();
+    if (t.length < 4) return [];
+    for (const fam of FAMILIAS_ASOC) {
+      if (fam.trigger.test(t)) return fam.piezas(fam.medida(t)).filter(Boolean);
+    }
+    return [];
+  }
+
+  function actualizarDatalistAsociacion(tr) {
+    const tbody = tr.closest('.mat-tbody');
+    if (!tbody) return;
+    const rows = [...tbody.querySelectorAll('.mat-row')];
+    const idx = rows.indexOf(tr);
+    const wrap = $('.mat-cell-detalle', tr);
+    const input = $('.mat-detalle', tr);
+    if (!wrap || !input) return;
+    let dl = wrap.querySelector('datalist.mat-asoc-list');
+    if (!dl) {
+      dl = document.createElement('datalist');
+      dl.className = 'mat-asoc-list';
+      dl.id = 'asoc-' + Math.random().toString(36).slice(2, 9);
+      wrap.appendChild(dl);
+      input.setAttribute('list', dl.id);
+    }
+    const prev = idx > 0 ? ($('.mat-detalle', rows[idx - 1])?.value || '') : '';
+    dl.innerHTML = sugerenciasAsociacion(prev).map((o) => `<option value="${esc(o)}">`).join('');
+  }
+
+  function bindInventarioMatRow(tr) {
+    const skuIn = $('.mat-sku', tr);
+    const detIn = $('.mat-detalle', tr);
+    const valIn = $('.mat-valor', tr);
+    const refresh = () => mostrarSugerenciaPrecio(tr);
+    [skuIn, detIn].forEach((inp) => {
+      if (!inp) return;
+      inp.addEventListener('focus', () => { actualizarDatalistAsociacion(tr); refresh(); });
+      inp.addEventListener('input', refresh);
+      inp.addEventListener('blur', () => setTimeout(() => ocultarSugerencia(tr), 200));
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Tab' && tr.querySelector('.precio-sugerencia.visible')?._item) {
+          e.preventDefault();
+          aplicarSugerenciaInventario(tr);
+        }
+      });
+    });
+    detIn?.addEventListener('dblclick', (e) => openParseModal(tr, e));
+    valIn?.addEventListener('change', () => guardarFilaEnInventario(tr));
+    valIn?.addEventListener('blur', () => { if (parseNum(valIn.value) > 0) guardarFilaEnInventario(tr); });
+  }
+
+  function createMatRow(d = {}) {
+    const tr = document.createElement('tr');
+    tr.className = 'mat-row border-t';
+    tr.innerHTML = `
+      <td class="p-1 mat-cell-wrap"><input class="mat-sku w-full border rounded px-1 py-0.5 text-xs" value="${esc(d.sku||'')}"></td>
+      <td class="p-1 mat-cell-wrap mat-cell-detalle"><input class="mat-detalle w-full border rounded px-1 py-0.5 text-xs" value="${esc(d.detalle||'')}" title="Doble click: pegar · Tab: sugerencia precio"></td>
+      <td class="p-1 w-14"><input type="number" min="0" step="any" class="mat-cantidad w-full border rounded px-1 py-0.5 text-xs text-right" value="${d.cantidad??''}"></td>
+      <td class="p-1 w-20"><input type="number" min="0" step="any" class="mat-valor w-full border rounded px-1 py-0.5 text-xs text-right" value="${d.valorUnitario??''}"></td>
+      <td class="p-1"><input class="mat-proveedor w-full border rounded px-1 py-0.5 text-xs" value="${esc(d.proveedor||'')}"></td>
+      <td class="p-1 w-20 text-right text-xs font-mono mat-total">$0</td>
+      <td class="p-1 w-6 no-print"><button type="button" class="row-del text-red-600 text-lg">&times;</button></td>`;
+    bindRow(tr, '.mat-sku,.mat-detalle,.mat-cantidad,.mat-valor,.mat-proveedor');
+    bindInventarioMatRow(tr);
+    const p = d.valorUnitario ?? d.precio;
+    if (p && (d.detalle || d.sku)) guardarEnInventario(d.sku, d.detalle, p, d.proveedor);
+    return tr;
+  }
+
+  function createMoRow(d = {}) {
+    const tr = document.createElement('tr');
+    tr.className = 'mo-row border-t';
+    tr.innerHTML = `
+      <td class="p-1"><input class="mo-esp w-full border rounded px-1 py-0.5 text-xs" value="${esc(d.especialidad||'')}" placeholder="Maestro…"></td>
+      <td class="p-1 w-16"><input type="number" min="0" step="any" class="mo-horas w-full border rounded px-1 py-0.5 text-xs text-right" value="${d.horas??''}"></td>
+      <td class="p-1 w-20"><input type="number" min="0" step="any" class="mo-valor w-full border rounded px-1 py-0.5 text-xs text-right" value="${d.valorHora??''}"></td>
+      <td class="p-1 w-24 text-right text-xs font-mono mo-total">$0</td>
+      <td class="p-1 w-6 no-print"><button type="button" class="row-del text-red-600 text-lg">&times;</button></td>`;
+    bindRow(tr, '.mo-esp,.mo-horas,.mo-valor');
+    return tr;
+  }
+
+  function buildItem(i) {
+    const sec = document.createElement('section');
+    sec.className = 'item-section bg-white rounded-lg shadow border p-4 sm:p-5';
+    sec.dataset.itemIndex = i;
+    sec.innerHTML = `
+      <div class="flex flex-wrap items-center gap-2 mb-3">
+        <h2 class="font-bold text-mora-red">Ítem ${i + 1}</h2>
+        <button type="button" class="btn-prov text-xs px-2.5 py-1 bg-emerald-600 text-white rounded-lg font-semibold no-print">🛒 Buscar en Proveedor</button>
+        <span class="text-xs text-gray-400 ml-auto">Activo para captura</span>
+      </div>
+      <div class="mb-3"><label class="text-sm font-semibold">Descripción del ítem</label>
+        <input class="item-descripcion w-full border-b py-1 mt-1 focus:outline-none focus:border-mora-red"></div>
+      <h3 class="text-xs font-bold uppercase text-gray-500 mb-1">Materiales</h3>
+      <div class="overflow-x-auto mb-2">
+        <table class="w-full text-xs min-w-[36rem]">
+          <thead class="bg-gray-100"><tr>
+            <th class="p-2 text-left">Sku</th><th class="p-2 text-left">Detalle</th>
+            <th class="p-2 text-right w-14">Cant.</th><th class="p-2 text-right w-20">V. unit.</th>
+            <th class="p-2 text-left">Proveedor</th><th class="p-2 text-right w-20">Totales</th><th class="w-6 no-print"></th>
+          </tr></thead>
+          <tbody class="mat-tbody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn-add-mat text-sm text-mora-red font-semibold no-print">+ Añadir material</button>
+      <h3 class="text-xs font-bold uppercase text-gray-500 mt-4 mb-1">Mano de obra</h3>
+      <div class="overflow-x-auto mb-2">
+        <table class="w-full text-xs min-w-[26rem]">
+          <thead class="bg-amber-50"><tr>
+            <th class="p-2 text-left">Especialidad</th><th class="p-2 text-right">Horas</th>
+            <th class="p-2 text-right">Valor hora</th><th class="p-2 text-right">Total esp.</th><th class="w-6 no-print"></th>
+          </tr></thead>
+          <tbody class="mo-tbody"></tbody>
+        </table>
+      </div>
+      <button type="button" class="btn-add-mo text-sm text-mora-red font-semibold no-print">+ Añadir especialidad</button>
+      <div class="mt-4 pt-3 border-t grid sm:grid-cols-2 gap-4">
+        <div><label class="text-sm font-semibold">Transportes / Proveedor / Residencia</label>
+          <input type="number" min="0" class="item-transportes w-full border rounded px-2 py-1 mt-1 text-right"></div>
+        <div class="text-sm sm:text-right space-y-1">
+          <div>Mat: <span class="item-mat font-mono font-semibold">$0</span></div>
+          <div>MO: <span class="item-mo font-mono font-semibold">$0</span></div>
+          <div class="font-bold text-mora-red">Neto: <span class="item-neto font-mono">$0</span></div>
+        </div>
+      </div>`;
+
+    sec.addEventListener('focusin', () => setActiveItem(i));
+    sec.querySelector('.btn-prov').addEventListener('click', (e) => { e.stopPropagation(); setActiveItem(i); openPicker(i); });
+    sec.querySelector('.btn-add-mat').addEventListener('click', () => {
+      setActiveItem(i);
+      const tb = $('.mat-tbody', sec);
+      const row = createMatRow();
+      tb.appendChild(row);
+      actualizarDatalistAsociacion(row);
+      $('.mat-cantidad', row)?.focus();
+    });
+    sec.querySelector('.btn-add-mo').addEventListener('click', () => {
+      setActiveItem(i);
+      const tb = $('.mo-tbody', sec);
+      tb.appendChild(createMoRow());
+      $('.mo-horas', tb.lastElementChild)?.focus();
+    });
+    sec.addEventListener('input', (e) => {
+      if (e.target.matches('.item-descripcion,.item-transportes')) recalc();
+    });
+    return sec;
+  }
+
+  function initItems() {
+    const c = $('#items-container');
+    c.innerHTML = '';
+    for (let i = 0; i < ITEM_COUNT; i++) c.appendChild(buildItem(i));
+    setActiveItem(0);
+  }
+
+  function recalcItem(sec) {
+    let mat = 0;
+    $$('.mat-row', sec).forEach((r) => {
+      const t = calc($('.mat-cantidad', r).value, $('.mat-valor', r).value);
+      $('.mat-total', r).textContent = fmt(t);
+      mat += t;
+    });
+    let mo = 0;
+    $$('.mo-row', sec).forEach((r) => {
+      const t = calc($('.mo-horas', r).value, $('.mo-valor', r).value);
+      $('.mo-total', r).textContent = fmt(t);
+      mo += t;
+    });
+    const tr = parseNum($('.item-transportes', sec).value);
+    $('.item-mat', sec).textContent = fmt(mat);
+    $('.item-mo', sec).textContent = fmt(mo);
+    $('.item-neto', sec).textContent = fmt(mat + mo);
+    return { mat, mo, tr, neto: mat + mo };
+  }
+
+  function recalc() {
+    let neto = 0, trT = 0;
+    $$('.item-section').forEach((s) => {
+      const t = recalcItem(s);
+      neto += t.neto;
+      trT += t.tr;
+    });
+    const iva = neto * IVA;
+    $('#display-neto').textContent = fmt(neto);
+    $('#display-transportes').textContent = fmt(trT);
+    $('#display-iva').textContent = fmt(iva);
+    $('#display-total').textContent = fmt(neto + iva);
+    return { neto, transportes: trT, iva, total: neto + iva };
+  }
+
+  function proveedorPrefijo(nombre) {
+    const n = String(nombre || '').toLowerCase();
+    if (/sodimac|falabella/.test(n)) return 'SOD';
+    if (/easy/.test(n)) return 'EAS';
+    if (/construmart/.test(n)) return 'CON';
+    if (/imperial/.test(n)) return 'IMP';
+    if (/madera/.test(n)) return 'MAD';
+    const clean = String(nombre || 'GEN').replace(/[^a-zA-Z]/g, '').toUpperCase();
+    return (clean.slice(0, 3) || 'GEN');
+  }
+
+  function procesarTextoBruto(texto) {
+    const ctx = getCtx();
+    const defaultProv = ctx?.proveedor || '';
+    const raw = String(texto || '').trim();
+    const lines = raw.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+
+    const provKeys = [
+      { k: /sodimac|falabella/i, n: 'Sodimac' },
+      { k: /easy\.cl|\beasy\b/i, n: 'Easy' },
+      { k: /construmart/i, n: 'Construmart' },
+      { k: /imperial/i, n: 'Imperial' },
+      { k: /maderas?\s*dimension/i, n: 'Maderas Dimensionadas' }
+    ];
+    let proveedor = defaultProv;
+    for (const p of provKeys) {
+      if (p.k.test(raw)) { proveedor = p.n; break; }
+    }
+
+    let precio = 0;
+    const precioMatches = [...raw.matchAll(/\$\s*([\d]{1,3}(?:\.\d{3})+|\d[\d.]*)/g)];
+    if (precioMatches.length) {
+      const ultimo = precioMatches[precioMatches.length - 1][1];
+      precio = parseInt(ultimo.replace(/\./g, ''), 10) || 0;
+    }
+
+    const SKU_KW = /(?:sku|ref|c[oó]digo(?:\s+de\s+producto)?|art\.?)\s*[:#.\-]?\s*([A-Za-z0-9][A-Za-z0-9.\-/]*)/gi;
+    let sku = '';
+    const kwHit = SKU_KW.exec(raw);
+    if (kwHit) {
+      sku = kwHit[1].replace(/[^A-Za-z0-9.\-/]/g, '').slice(0, 20);
+    }
+
+    if (!sku) {
+      const bloques = raw.match(/\b([A-Za-z0-9][A-Za-z0-9.\-/]{4,11})\b/g) || [];
+      const precioStr = String(precio || '');
+      for (const bloque of bloques) {
+        const cod = bloque.replace(/[^A-Za-z0-9.\-/]/g, '');
+        if (cod.length < 5 || cod.length > 12) continue;
+        if (/^\d{2,3}$/.test(cod)) continue;
+        if (cod === precioStr) continue;
+        if (/^\d+$/.test(cod) && !/[A-Za-z]/.test(cod)) continue;
+        sku = cod;
+        break;
+      }
+    }
+
+    if (!sku) {
+      sku = `${proveedorPrefijo(proveedor)}-${Math.floor(1000 + Math.random() * 9000)}`;
+    }
+
+    let detalle = (lines[0] || raw).slice(0, 80);
+    const basura = [
+      /despacho\s+a\s+domicilio/gi,
+      /agregar\s+al\s+carro/gi,
+      /añadir\s+al\s+carro/gi,
+      /✓\s*disponible/gi,
+      /disponible\s+para\s+retiro/gi,
+      /\d+[,.]?\d*\s*(?:estrellas?|stars?|valoraciones?)/gi,
+      /[★☆✩✪✫✬✭✮✯⭐]{1,5}/g,
+      /\$\s*[\d.]+/g,
+      /(?:sku|ref|c[oó]digo(?:\s+de\s+producto)?|art\.?)\s*[:#.\-]?\s*[\w.\-/]+/gi
+    ];
+    basura.forEach((rx) => { detalle = detalle.replace(rx, ''); });
+    detalle = detalle.replace(/\s+/g, ' ').trim();
+
+    return { sku, detalle, precio, valorUnitario: precio, proveedor };
+  }
+
+  function openParseModal(row) {
+    parseTargetRow = row;
+    $('#parse-raw').value = '';
+    openModal($('#modal-parse'));
+    setTimeout(() => $('#parse-raw').focus(), 50);
+  }
+
+  function injectParseResult(data) {
+    if (!parseTargetRow) return;
+    if (data.sku) $('.mat-sku', parseTargetRow).value = data.sku;
+    if (data.detalle) $('.mat-detalle', parseTargetRow).value = data.detalle;
+    const precio = data.precio ?? data.valorUnitario;
+    if (precio) $('.mat-valor', parseTargetRow).value = precio;
+    if (data.proveedor) $('.mat-proveedor', parseTargetRow).value = data.proveedor;
+    guardarFilaEnInventario(parseTargetRow);
+    closeModal($('#modal-parse'));
+    recalc();
+    const c = $('.mat-cantidad', parseTargetRow);
+    c?.focus();
+    c?.select();
+    parseTargetRow = null;
+  }
+
+  function injectMaterial(payload) {
+    let idx = activeItem;
+    if (payload.itemNumero != null) {
+      idx = Math.min(Math.max(1, parseInt(payload.itemNumero, 10)), ITEM_COUNT) - 1;
+    }
+    setActiveItem(idx);
+    const sec = $(`.item-section[data-item-index="${idx}"]`);
+    const ctx = getCtx();
+    const row = createMatRow({
+      sku: payload.sku || '',
+      detalle: payload.detalle || payload.nombre || '',
+      valorUnitario: payload.precio ?? payload.valorUnitario ?? '',
+      proveedor: payload.proveedor || ctx?.proveedor || '',
+      cantidad: payload.cantidad ?? ''
+    });
+    $('.mat-tbody', sec).appendChild(row);
+    guardarFilaEnInventario(row);
+    recalc();
+    const c = $('.mat-cantidad', row);
+    c?.focus();
+    c?.select();
+  }
+
+  function readItem(sec, i) {
+    const materiales = [];
+    $$('.mat-row', sec).forEach((r) => {
+      const cantidad = parseNum($('.mat-cantidad', r).value);
+      const valorUnitario = parseNum($('.mat-valor', r).value);
+      materiales.push({
+        sku: $('.mat-sku', r).value.trim(),
+        detalle: $('.mat-detalle', r).value.trim(),
+        cantidad, valorUnitario,
+        total: calc(cantidad, valorUnitario),
+        proveedor: $('.mat-proveedor', r).value.trim()
+      });
+    });
+    const manoDeObra = [];
+    $$('.mo-row', sec).forEach((r) => {
+      const horas = parseNum($('.mo-horas', r).value);
+      const valorHora = parseNum($('.mo-valor', r).value);
+      manoDeObra.push({
+        especialidad: $('.mo-esp', r).value.trim(),
+        horas, valorHora, total: calc(horas, valorHora)
+      });
+    });
+    const transportes = parseNum($('.item-transportes', sec).value);
+    const tm = materiales.reduce((a, m) => a + m.total, 0);
+    const tmo = manoDeObra.reduce((a, m) => a + m.total, 0);
+    return {
+      indice: i + 1,
+      descripcion: $('.item-descripcion', sec).value.trim(),
+      materiales, manoDeObra, transportes,
+      totalMateriales: tm, totalManoDeObra: tmo, subtotal: tm + tmo
+    };
+  }
+
+  function buildState() {
+    const totales = recalc();
+    return {
+      version: '3.0',
+      exportado: new Date().toISOString(),
+      encabezado: {
+        numero: $('#numero').value.trim(),
+        atencionA: $('#atencionA').value.trim(),
+        obra: $('#obra').value.trim(),
+        fecha: $('#fecha').value
+      },
+      items: $$('.item-section').map((s, i) => readItem(s, i)),
+      totales,
+      condiciones: { plazo: '5 días hábiles', garantia: '6 meses', anticipo: '50% inicio faena' },
+      proveedores: getProveedores(),
+      inventario_precios: getInventario(),
+      documentacion: documentacion.map((d) => ({ ...d })),
+      itemActivo: activeItem
+    };
+  }
+
+  function applyState(st) {
+    const e = st.encabezado || {};
+    $('#numero').value = e.numero || resolveNumeroInicial();
+    if (e.numero) localStorage.setItem(LS_NUM, e.numero);
+    $('#atencionA').value = e.atencionA || '';
+    $('#obra').value = e.obra || '';
+    $('#fecha').value = e.fecha || new Date().toISOString().slice(0, 10);
+    if (st.proveedores?.length) localStorage.setItem(LS_PROV, JSON.stringify(st.proveedores));
+    if (st.inventario_precios) setInventario(st.inventario_precios);
+    const items = st.items || [];
+    $$('.item-section').forEach((sec, i) => {
+      const it = items[i] || {};
+      $('.item-descripcion', sec).value = it.descripcion || '';
+      $('.item-transportes', sec).value = it.transportes || '';
+      const mt = $('.mat-tbody', sec);
+      mt.innerHTML = '';
+      (it.materiales || []).forEach((m) => mt.appendChild(createMatRow(m)));
+      const mo = $('.mo-tbody', sec);
+      mo.innerHTML = '';
+      const mob = Array.isArray(it.manoDeObra) ? it.manoDeObra
+        : (typeof it.manoDeObra === 'number' && it.manoDeObra > 0
+          ? [{ especialidad: 'MO', horas: 1, valorHora: it.manoDeObra }] : []);
+      mob.forEach((m) => mo.appendChild(createMoRow(m)));
+    });
+    documentacion = (st.documentacion || []).map((d) => ({ ...d }));
+    renderDocs();
+    setActiveItem(Math.min(Math.max(0, st.itemActivo || 0), ITEM_COUNT - 1));
+    recalc();
+  }
+
+  function renderDocs() {
+    const ul = $('#doc-list');
+    if (!documentacion.length) {
+      ul.innerHTML = '<li class="text-gray-400 italic">Sin archivos</li>';
+      return;
+    }
+    ul.innerHTML = documentacion.map((d, i) => `
+      <li class="flex justify-between gap-2 bg-gray-50 rounded px-3 py-2 border text-sm">
+        <span><b>${esc(d.nombre)}</b> <span class="text-gray-500">(${d.tamano} B)</span></span>
+        <button type="button" data-di="${i}" class="text-red-600 text-xs font-bold">Quitar</button>
+      </li>`).join('');
+    $$('[data-di]', ul).forEach((b) => b.addEventListener('click', () => {
+      documentacion.splice(+b.dataset.di, 1);
+      renderDocs();
+    }));
+  }
+
+  function openModal(el) { el.classList.remove('hidden'); el.classList.add('modal-open'); }
+  function closeModal(el) { el.classList.add('hidden'); el.classList.remove('modal-open'); }
+
+  function openPicker(itemIndex) {
+    pickerItem = itemIndex;
+    $('#picker-item').textContent = itemIndex + 1;
+    const list = getProveedores();
+    const ul = $('#picker-list');
+    if (!list.length) {
+      ul.innerHTML = '';
+      $('#picker-empty').classList.remove('hidden');
+    } else {
+      $('#picker-empty').classList.add('hidden');
+      ul.innerHTML = list.map((p, i) => `
+        <li><button type="button" data-pi="${i}" class="w-full text-left px-4 py-3 rounded-lg border hover:border-mora-red hover:bg-red-50">
+          <span class="font-semibold block">${esc(p.nombre)}</span>
+          <span class="text-xs text-gray-500 truncate block">${esc(p.url)}</span>
+        </button></li>`).join('');
+      $$('[data-pi]', ul).forEach((btn) => btn.addEventListener('click', () => {
+        const p = list[+btn.dataset.pi];
+        closeModal($('#modal-picker'));
+        setCtx(itemIndex + 1, p.nombre);
+        let url = p.url.trim();
+        if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }));
+    }
+    openModal($('#modal-picker'));
+  }
+
+  function renderProvList() {
+    const list = getProveedores();
+    const ul = $('#prov-list');
+    if (!list.length) { ul.innerHTML = '<li class="text-gray-400 text-sm italic">Sin proveedores</li>'; return; }
+    ul.innerHTML = list.map((p, i) => `
+      <li class="flex justify-between gap-2 p-3 border rounded-lg">
+        <div class="min-w-0"><div class="font-semibold text-sm">${esc(p.nombre)}</div>
+        <div class="text-xs text-gray-500 truncate">${esc(p.url)}</div></div>
+        <button type="button" data-pd="${i}" class="text-red-600 text-xs font-bold shrink-0">Eliminar</button>
+      </li>`).join('');
+    $$('[data-pd]', ul).forEach((b) => b.addEventListener('click', () => {
+      const arr = getProveedores();
+      arr.splice(+b.dataset.pd, 1);
+      localStorage.setItem(LS_PROV, JSON.stringify(arr));
+      renderProvList();
+    }));
+  }
+
+  function buildPdfHtml(st) {
+    const e = st.encabezado;
+    const fecha = e.fecha ? new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-CL') : '—';
+    let itemsH = '';
+    st.items.forEach((it, i) => {
+      if (!it.descripcion && !it.materiales?.length && !it.manoDeObra?.length) return;
+      let mR = '';
+      (it.materiales || []).forEach((m) => {
+        if (!m.sku && !m.detalle && !m.cantidad) return;
+        mR += `<tr><td>${esc(m.sku)}</td><td>${esc(m.detalle)}</td><td>${m.cantidad}</td>
+          <td>${fmt(m.valorUnitario)}</td><td>${esc(m.proveedor)}</td><td>${fmt(m.total)}</td></tr>`;
+      });
+      let oR = '';
+      (it.manoDeObra || []).forEach((m) => {
+        oR += `<tr><td>${esc(m.especialidad)}</td><td>${m.horas}</td><td>${fmt(m.valorHora)}</td><td>${fmt(m.total)}</td></tr>`;
+      });
+      itemsH += `<div style="margin-bottom:10px;border:1px solid #333;padding:8px">
+        <b>Ítem ${i+1}: ${esc(it.descripcion||'—')}</b>
+        ${mR ? `<p style="font-size:10px;font-weight:bold;margin:4px 0">Materiales</p><table><tr><th>Sku</th><th>Detalle</th><th>Cant</th><th>V.Unit</th><th>Prov</th><th>Total</th></tr>${mR}</table>` : ''}
+        ${oR ? `<p style="font-size:10px;font-weight:bold;margin:4px 0">Mano de obra</p><table><tr><th>Esp.</th><th>Hrs</th><th>V.Hora</th><th>Total</th></tr>${oR}</table>` : ''}
+        <p style="font-size:10px;margin-top:4px">Neto ítem: ${fmt(it.subtotal)}</p></div>`;
+    });
+    return `<div style="border-bottom:4px solid #c41e3a;padding-bottom:10px;margin-bottom:12px">
+      <table style="width:100%;border:none"><tr>
+        <td style="border:none"><div style="font-size:32px;font-weight:900;color:#c41e3a">MORA</div></td>
+        <td style="border:none;text-align:center"><div class="pdf-title">COTIZACIÓN</div></td>
+        <td style="border:none;text-align:right"><div>Nº <b>${esc(e.numero||'—')}</b></div></td>
+      </tr></table></div>
+      <p><b>Atención:</b> ${esc(e.atencionA||'—')}<br><b>Obra:</b> ${esc(e.obra||'—')}<br><b>Fecha:</b> ${fecha}</p>
+      ${itemsH}
+      <table style="margin-top:12px;width:100%;border:none"><tr>
+        <td style="border:none;vertical-align:top">Plazo: 5 días hábiles · Garantía: 6 meses · Anticipo: 50%</td>
+        <td style="border:none;text-align:right"><table>
+          <tr><td><b>NETO</b></td><td>${fmt(st.totales.neto)}</td></tr>
+          <tr><td><b>IVA 19%</b></td><td>${fmt(st.totales.iva)}</td></tr>
+          <tr style="background:#fde8ec"><td><b>TOTAL</b></td><td><b>${fmt(st.totales.total)}</b></td></tr>
+        </table></td></tr></table>`;
+  }
+
+  window.addEventListener('message', (ev) => {
+    let d = ev.data;
+    if (typeof d === 'string') { try { d = JSON.parse(d); } catch { return; } }
+    if (!d || typeof d !== 'object') return;
+    if (d.type === 'COTIZADOR_MATERIAL' || d.sku != null || d.detalle != null || d.precio != null) {
+      injectMaterial(d);
+    }
+  });
+
+  $('#parse-inject').addEventListener('click', () => injectParseResult(procesarTextoBruto($('#parse-raw').value)));
+  $$('.modal-parse-close').forEach((b) => b.addEventListener('click', () => closeModal($('#modal-parse'))));
+  $('#modal-parse').addEventListener('click', (e) => { if (e.target === $('#modal-parse')) closeModal($('#modal-parse')); });
+
+  $('#btn-siguiente').addEventListener('click', siguienteCotizacion);
+  $('#btn-siguiente-header').addEventListener('click', siguienteCotizacion);
+  $('#btn-export').addEventListener('click', () => {
+    const st = buildState();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(st, null, 2)], { type: 'application/json' }));
+    a.download = `cotizacion-${st.encabezado.numero || 'sin-num'}.json`;
+    a.click();
+  });
+  $('#btn-import').addEventListener('change', (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    const r = new FileReader();
+    r.onload = () => { try { applyState(JSON.parse(r.result)); } catch { alert('JSON inválido'); } };
+    r.readAsText(f);
+    e.target.value = '';
+  });
+  $('#btn-pdf').addEventListener('click', async () => {
+    const st = buildState();
+    $('#cotizacion-pdf').innerHTML = buildPdfHtml(st);
+    await html2pdf().set({
+      margin: 10, filename: `Cotizacion-${st.encabezado.numero || 'doc'}.pdf`,
+      html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4' }
+    }).from($('#cotizacion-pdf')).save();
+  });
+  $('#doc-files').addEventListener('change', async (e) => {
+    for (const f of e.target.files || []) {
+      const b = await new Promise((res, rej) => {
+        const rd = new FileReader();
+        rd.onload = () => res(rd.result.split(',')[1] || '');
+        rd.onerror = rej;
+        rd.readAsDataURL(f);
+      });
+      documentacion.push({ nombre: f.name, tipo: f.type, tamano: f.size, base64: b });
+    }
+    renderDocs();
+    e.target.value = '';
+  });
+
+  $('#btn-proveedores').addEventListener('click', () => { renderProvList(); openModal($('#modal-prov-config')); });
+  $$('.modal-prov-close,.modal-picker-close').forEach((b) => {
+    b.addEventListener('click', () => {
+      closeModal($('#modal-prov-config'));
+      closeModal($('#modal-picker'));
+    });
+  });
+  [$('#modal-prov-config'), $('#modal-picker')].forEach((m) => {
+    m.addEventListener('click', (e) => { if (e.target === m) closeModal(m); });
+  });
+  $('#form-prov').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const arr = getProveedores();
+    arr.push({ nombre: $('#prov-nombre').value.trim(), url: $('#prov-url').value.trim() });
+    localStorage.setItem(LS_PROV, JSON.stringify(arr));
+    $('#prov-nombre').value = '';
+    $('#prov-url').value = '';
+    renderProvList();
+  });
+
+  if (!localStorage.getItem(LS_PROV)) localStorage.setItem(LS_PROV, JSON.stringify(DEFAULT_PROV));
+  initItems();
+  initNumeracion();
+  $('#fecha').value = new Date().toISOString().slice(0, 10);
+  renderDocs();
+  recalc();
+})();
+  </script>
+</body>
+</html>
