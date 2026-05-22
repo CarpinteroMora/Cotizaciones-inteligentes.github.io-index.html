@@ -27,6 +27,15 @@
     }
     .precio-sugerencia.visible { display: block; }
     .precio-sugerencia:hover { background: #dbeafe; }
+    #vista-previa-contenido { font-family: Arial, Helvetica, sans-serif; }
+    #vista-previa-contenido table { border-collapse: collapse; width: 100%; }
+    #vista-previa-contenido th, #vista-previa-contenido td { border: 1px solid #333; padding: 4px 6px; font-size: 11px; }
+    @media print {
+      body * { visibility: hidden; }
+      #modal-vista, #modal-vista * { visibility: visible; }
+      #modal-vista { position: absolute; left: 0; top: 0; width: 100%; background: white; }
+      #modal-vista .no-print-modal { display: none !important; }
+    }
   </style>
 </head>
 <body class="bg-gray-100 text-gray-900 min-h-screen">
@@ -45,7 +54,7 @@
         <div class="sm:w-56 flex flex-col gap-2">
           <label class="text-xs font-semibold text-gray-500 uppercase">Número</label>
           <input type="text" id="numero" class="w-full border-b-2 border-gray-800 py-1 font-semibold focus:outline-none focus:border-mora-red">
-          <button type="button" id="btn-siguiente-header" class="no-print text-xs px-2 py-1.5 bg-mora-red text-white rounded-lg font-semibold hover:bg-red-700">🔄 Siguiente Cotización</button>
+          <button type="button" id="btn-siguiente-header" class="no-print text-xs px-2 py-1.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">🔄 Nueva cotización</button>
         </div>
       </div>
       <div class="p-4 sm:p-6 grid gap-3 sm:grid-cols-2">
@@ -55,6 +64,12 @@
           <input type="text" id="obra" class="w-full border-b py-1 focus:outline-none focus:border-mora-red"></div>
         <div><label class="text-sm font-semibold">Fecha</label>
           <input type="date" id="fecha" class="w-full border-b py-1 focus:outline-none focus:border-mora-red"></div>
+      </div>
+      <div class="px-4 sm:px-6 pb-4 pt-2 border-t border-gray-100 no-print flex flex-wrap gap-2 justify-end items-center">
+        <span class="text-xs text-gray-500 mr-auto">Agrega tiendas (Sodimac, Easy…) para buscar materiales</span>
+        <button type="button" class="btn-abrir-proveedores px-4 py-2.5 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 shadow-sm">
+          ⚙ Gestionar proveedores
+        </button>
       </div>
     </header>
 
@@ -73,8 +88,9 @@
         <div class="lg:text-right">
           <h2 class="text-sm font-bold uppercase text-gray-500 mb-3">Totales</h2>
           <div class="space-y-2 max-w-xs lg:ml-auto text-sm">
+            <div class="flex justify-between py-1 text-gray-600 text-xs"><span>Materiales + MO</span><span id="display-mat-mo" class="font-mono">$0</span></div>
+            <div class="flex justify-between py-1 text-gray-600 text-xs"><span>Transportes</span><span id="display-transportes" class="font-mono">$0</span></div>
             <div class="flex justify-between py-2 border-b font-bold"><span>NETO</span><span id="display-neto" class="font-mono text-lg">$0</span></div>
-            <p class="text-xs text-gray-500">Transportes ref.: <span id="display-transportes" class="font-mono">$0</span></p>
             <div class="flex justify-between py-2 border-b font-bold"><span>IVA (19%)</span><span id="display-iva" class="font-mono">$0</span></div>
             <div class="flex justify-between py-3 bg-mora-red/10 rounded px-2 font-bold text-lg">
               <span>TOTAL</span><span id="display-total" class="font-mono text-mora-red">$0</span>
@@ -91,14 +107,55 @@
       <ul id="doc-list" class="mt-3 space-y-2 text-sm"></ul>
     </section>
 
-    <div class="flex flex-wrap gap-3 justify-center sticky bottom-4 z-10 no-print pb-2">
-      <button type="button" id="btn-siguiente" class="px-4 py-2.5 bg-emerald-700 text-white rounded-lg font-semibold text-sm hover:bg-emerald-800 shadow">🔄 Siguiente Cotización</button>
-      <button type="button" id="btn-proveedores" class="px-4 py-2.5 bg-white border rounded-lg font-semibold text-sm shadow hover:bg-gray-50">⚙ Mis Proveedores</button>
-      <button type="button" id="btn-export" class="px-4 py-2.5 bg-gray-800 text-white rounded-lg font-semibold text-sm hover:bg-gray-700 shadow">Exportar JSON</button>
-      <label class="px-4 py-2.5 bg-gray-600 text-white rounded-lg font-semibold text-sm shadow cursor-pointer hover:bg-gray-500">
-        Cargar JSON<input type="file" id="btn-import" accept=".json" class="hidden">
-      </label>
-      <button type="button" id="btn-pdf" class="px-4 py-2.5 bg-mora-red text-white rounded-lg font-semibold text-sm hover:bg-red-700 shadow">Generar PDF</button>
+    <section class="no-print bg-white rounded-xl shadow-lg border-2 border-mora-red/30 p-4 sm:p-5 sticky bottom-4 z-20">
+      <p class="text-center text-sm font-semibold text-gray-700 mb-3">Enviar cotización al cliente</p>
+      <div class="flex flex-wrap gap-3 justify-center">
+        <button type="button" id="btn-ver-cotizacion"
+          class="px-5 py-3 bg-mora-red text-white rounded-xl font-bold text-sm shadow-md hover:bg-red-700 min-w-[10rem]">
+          👁 Ver cotización
+        </button>
+        <button type="button" id="btn-pdf"
+          class="px-5 py-3 bg-gray-900 text-white rounded-xl font-bold text-sm shadow-md hover:bg-gray-800 min-w-[10rem]">
+          📄 Descargar PDF
+        </button>
+        <button type="button" id="btn-whatsapp"
+          class="px-5 py-3 bg-green-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-green-700 min-w-[10rem]">
+          💬 WhatsApp
+        </button>
+        <button type="button" id="btn-email"
+          class="px-5 py-3 bg-blue-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-blue-700 min-w-[10rem]">
+          ✉ Correo
+        </button>
+      </div>
+      <details class="mt-4 text-center">
+        <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-800 inline-block">Más opciones (nueva cotización, proveedores, respaldo)</summary>
+        <div class="flex flex-wrap gap-2 justify-center mt-3 pt-3 border-t">
+          <button type="button" id="btn-siguiente" class="px-3 py-2 bg-emerald-700 text-white rounded-lg text-xs font-semibold hover:bg-emerald-800">🔄 Nueva cotización</button>
+          <button type="button" id="btn-proveedores" class="px-3 py-2 bg-white border rounded-lg text-xs font-semibold hover:bg-gray-50">⚙ Proveedores</button>
+          <button type="button" id="btn-export" class="px-3 py-2 bg-gray-600 text-white rounded-lg text-xs font-semibold hover:bg-gray-500">Respaldo JSON</button>
+          <label class="px-3 py-2 bg-gray-500 text-white rounded-lg text-xs font-semibold cursor-pointer hover:bg-gray-400">
+            Restaurar<input type="file" id="btn-import" accept=".json" class="hidden">
+          </label>
+        </div>
+      </details>
+    </section>
+  </div>
+
+  <div id="modal-vista" class="fixed inset-0 z-[60] hidden items-center justify-center p-2 sm:p-4 bg-black/60 no-print">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[95vh] flex flex-col">
+      <div class="flex flex-wrap items-center justify-between gap-2 p-4 border-b no-print-modal">
+        <h3 class="font-bold text-lg">Vista previa — Cotización</h3>
+        <button type="button" id="btn-cerrar-vista" class="text-2xl text-gray-400 hover:text-gray-800 leading-none">&times;</button>
+      </div>
+      <div id="vista-previa-scroll" class="overflow-y-auto flex-1 p-4 sm:p-6 bg-gray-50">
+        <div id="vista-previa-contenido" class="bg-white p-6 sm:p-8 mx-auto shadow-inner max-w-[210mm]"></div>
+      </div>
+      <div class="p-4 border-t bg-gray-50 flex flex-wrap gap-2 justify-center no-print-modal">
+        <button type="button" id="btn-pdf-desde-vista" class="px-4 py-2.5 bg-gray-900 text-white rounded-lg font-semibold text-sm hover:bg-gray-800">📄 Descargar PDF</button>
+        <button type="button" id="btn-imprimir" class="px-4 py-2.5 bg-white border rounded-lg font-semibold text-sm hover:bg-gray-100">🖨 Imprimir</button>
+        <button type="button" id="btn-whatsapp-vista" class="px-4 py-2.5 bg-green-600 text-white rounded-lg font-semibold text-sm hover:bg-green-700">💬 WhatsApp</button>
+        <button type="button" id="btn-email-vista" class="px-4 py-2.5 bg-blue-600 text-white rounded-lg font-semibold text-sm hover:bg-blue-700">✉ Correo</button>
+      </div>
     </div>
   </div>
 
@@ -129,7 +186,12 @@
         <button type="button" class="modal-picker-close text-2xl text-gray-400">&times;</button>
       </div>
       <ul id="picker-list" class="p-4 overflow-y-auto space-y-2 flex-1"></ul>
-      <p id="picker-empty" class="hidden p-4 text-sm text-amber-700">Configura proveedores en ⚙ Mis Proveedores.</p>
+      <p id="picker-empty" class="hidden p-4 text-sm text-amber-700">Aún no hay proveedores registrados.</p>
+      <div class="p-4 border-t bg-gray-50 no-print">
+        <button type="button" class="btn-abrir-proveedores w-full py-2.5 bg-emerald-600 text-white rounded-lg font-semibold text-sm hover:bg-emerald-700">
+          + Añadir / gestionar proveedores
+        </button>
+      </div>
     </div>
   </div>
 
@@ -150,11 +212,11 @@
     </div>
   </div>
 
-  <div class="fixed left-[-9999px] w-[210mm]">
-    <div id="cotizacion-pdf" class="bg-white p-8 text-black" style="width:210mm"></div>
+  <div id="pdf-render-host" class="fixed left-0 top-0 w-[210mm] -z-50 opacity-0 pointer-events-none overflow-hidden" aria-hidden="true">
+    <div id="cotizacion-pdf" class="bg-white p-8 text-black" style="width:210mm;min-height:297mm"></div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js" crossorigin="anonymous"></script>
   <script>
 (function () {
   'use strict';
@@ -225,7 +287,15 @@
   const $$ = (s, r = document) => [...r.querySelectorAll(s)];
   const esc = (s) => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
   const fmt = (n) => new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(Math.round(n) || 0);
-  const parseNum = (v) => { const n = parseFloat(String(v).replace(/[^\d.,-]/g,'').replace(',','.')); return isNaN(n) ? 0 : n; };
+  const parseNum = (v) => {
+    let s = String(v ?? '').trim();
+    if (!s) return 0;
+    if (/^\d{1,3}(\.\d{3})+(,\d+)?$/.test(s)) s = s.replace(/\./g, '').replace(',', '.');
+    else if (/^\d{1,3}(,\d{3})+(\.\d+)?$/.test(s)) s = s.replace(/,/g, '');
+    else s = s.replace(',', '.');
+    const n = parseFloat(s.replace(/[^\d.-]/g, ''));
+    return isNaN(n) ? 0 : n;
+  };
   const calc = (a, b) => parseNum(a) * parseNum(b);
 
   function currentYear() { return new Date().getFullYear(); }
@@ -530,10 +600,11 @@
       <div class="mt-4 pt-3 border-t grid sm:grid-cols-2 gap-4">
         <div><label class="text-sm font-semibold">Transportes / Proveedor / Residencia</label>
           <input type="number" min="0" class="item-transportes w-full border rounded px-2 py-1 mt-1 text-right"></div>
-        <div class="text-sm sm:text-right space-y-1">
+        <div class="text-sm sm:text-right space-y-1 bg-gray-50 rounded-lg p-2 border border-gray-100">
           <div>Mat: <span class="item-mat font-mono font-semibold">$0</span></div>
           <div>MO: <span class="item-mo font-mono font-semibold">$0</span></div>
-          <div class="font-bold text-mora-red">Neto: <span class="item-neto font-mono">$0</span></div>
+          <div>Transportes: <span class="item-tr font-mono font-semibold">$0</span></div>
+          <div class="font-bold text-mora-red pt-1 border-t border-gray-200">Subtotal ítem: <span class="item-neto font-mono">$0</span></div>
         </div>
       </div>`;
 
@@ -553,9 +624,6 @@
       tb.appendChild(createMoRow());
       $('.mo-horas', tb.lastElementChild)?.focus();
     });
-    sec.addEventListener('input', (e) => {
-      if (e.target.matches('.item-descripcion,.item-transportes')) recalc();
-    });
     return sec;
   }
 
@@ -564,6 +632,20 @@
     c.innerHTML = '';
     for (let i = 0; i < ITEM_COUNT; i++) c.appendChild(buildItem(i));
     setActiveItem(0);
+  }
+
+  function bindItemsRecalc() {
+    const c = $('#items-container');
+    if (!c || c._recalcBound) return;
+    c._recalcBound = true;
+    c.addEventListener('input', (e) => {
+      if (e.target.closest('.item-section') && (
+        e.target.matches('.item-transportes, .item-descripcion, .mat-cantidad, .mat-valor, .mo-horas, .mo-valor, .mat-sku, .mat-detalle, .mat-proveedor, .mo-esp')
+      )) recalc();
+    });
+    c.addEventListener('change', (e) => {
+      if (e.target.matches('.item-transportes')) recalc();
+    });
   }
 
   function recalcItem(sec) {
@@ -579,26 +661,34 @@
       $('.mo-total', r).textContent = fmt(t);
       mo += t;
     });
-    const tr = parseNum($('.item-transportes', sec).value);
-    $('.item-mat', sec).textContent = fmt(mat);
-    $('.item-mo', sec).textContent = fmt(mo);
-    $('.item-neto', sec).textContent = fmt(mat + mo);
-    return { mat, mo, tr, neto: mat + mo };
+    const trInp = sec.querySelector('.item-transportes');
+    const tr = parseNum(trInp ? trInp.value : 0);
+    const netoItem = mat + mo + tr;
+    const setTxt = (sel, val) => { const el = sec.querySelector(sel); if (el) el.textContent = fmt(val); };
+    setTxt('.item-mat', mat);
+    setTxt('.item-mo', mo);
+    setTxt('.item-tr', tr);
+    setTxt('.item-neto', netoItem);
+    return { mat, mo, tr, neto: netoItem };
   }
 
   function recalc() {
-    let neto = 0, trT = 0;
+    let neto = 0, trT = 0, matMo = 0;
     $$('.item-section').forEach((s) => {
       const t = recalcItem(s);
       neto += t.neto;
       trT += t.tr;
+      matMo += t.mat + t.mo;
     });
     const iva = neto * IVA;
+    const total = neto + iva;
+    const elMatMo = $('#display-mat-mo');
+    if (elMatMo) elMatMo.textContent = fmt(matMo);
     $('#display-neto').textContent = fmt(neto);
     $('#display-transportes').textContent = fmt(trT);
     $('#display-iva').textContent = fmt(iva);
-    $('#display-total').textContent = fmt(neto + iva);
-    return { neto, transportes: trT, iva, total: neto + iva };
+    $('#display-total').textContent = fmt(total);
+    return { neto, matMo, transportes: trT, iva, total };
   }
 
   function proveedorPrefijo(nombre) {
@@ -755,7 +845,7 @@
       indice: i + 1,
       descripcion: $('.item-descripcion', sec).value.trim(),
       materiales, manoDeObra, transportes,
-      totalMateriales: tm, totalManoDeObra: tmo, subtotal: tm + tmo
+      totalMateriales: tm, totalManoDeObra: tmo, subtotal: tm + tmo + transportes
     };
   }
 
@@ -875,12 +965,29 @@
     }));
   }
 
+  function itemTieneDatos(it) {
+    return it.descripcion || it.materiales?.length || it.manoDeObra?.length || it.transportes;
+  }
+
+  function validarCotizacionParaEnvio() {
+    const st = buildState();
+    const tieneCliente = st.encabezado.atencionA || st.encabezado.obra;
+    const tieneItems = st.items.some(itemTieneDatos);
+    if (!tieneCliente && !tieneItems) {
+      alert('Completa al menos "Atención a" u "Obra", y agrega ítems antes de enviar la cotización.');
+      return null;
+    }
+    return st;
+  }
+
   function buildPdfHtml(st) {
     const e = st.encabezado;
     const fecha = e.fecha ? new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-CL') : '—';
     let itemsH = '';
+    let hayItems = false;
     st.items.forEach((it, i) => {
-      if (!it.descripcion && !it.materiales?.length && !it.manoDeObra?.length) return;
+      if (!itemTieneDatos(it)) return;
+      hayItems = true;
       let mR = '';
       (it.materiales || []).forEach((m) => {
         if (!m.sku && !m.detalle && !m.cantidad) return;
@@ -895,8 +1002,12 @@
         <b>Ítem ${i+1}: ${esc(it.descripcion||'—')}</b>
         ${mR ? `<p style="font-size:10px;font-weight:bold;margin:4px 0">Materiales</p><table><tr><th>Sku</th><th>Detalle</th><th>Cant</th><th>V.Unit</th><th>Prov</th><th>Total</th></tr>${mR}</table>` : ''}
         ${oR ? `<p style="font-size:10px;font-weight:bold;margin:4px 0">Mano de obra</p><table><tr><th>Esp.</th><th>Hrs</th><th>V.Hora</th><th>Total</th></tr>${oR}</table>` : ''}
-        <p style="font-size:10px;margin-top:4px">Neto ítem: ${fmt(it.subtotal)}</p></div>`;
+        <p style="font-size:10px;margin-top:4px">Neto ítem: ${fmt(it.subtotal)}</p>
+        ${it.transportes ? `<p style="font-size:9px">Transportes: ${fmt(it.transportes)}</p>` : ''}</div>`;
     });
+    if (!hayItems) {
+      itemsH = '<p style="color:#666;font-style:italic">Sin ítems detallados en esta cotización.</p>';
+    }
     return `<div style="border-bottom:4px solid #c41e3a;padding-bottom:10px;margin-bottom:12px">
       <table style="width:100%;border:none"><tr>
         <td style="border:none"><div style="font-size:32px;font-weight:900;color:#c41e3a">MORA</div></td>
@@ -911,7 +1022,114 @@
           <tr><td><b>NETO</b></td><td>${fmt(st.totales.neto)}</td></tr>
           <tr><td><b>IVA 19%</b></td><td>${fmt(st.totales.iva)}</td></tr>
           <tr style="background:#fde8ec"><td><b>TOTAL</b></td><td><b>${fmt(st.totales.total)}</b></td></tr>
-        </table></td></tr></table>`;
+        </table></td></tr></table>
+      <p style="font-size:9px;color:#666;margin-top:6px">Desglose: Mat.+MO ${fmt(st.totales.matMo || 0)} · Transportes ${fmt(st.totales.transportes || 0)}</p>`;
+  }
+
+  function renderVistaPrevia() {
+    const st = validarCotizacionParaEnvio();
+    if (!st) return false;
+    $('#vista-previa-contenido').innerHTML = buildPdfHtml(st);
+    openModal($('#modal-vista'));
+    return true;
+  }
+
+  function textoWhatsApp(st) {
+    const e = st.encabezado;
+    return `Hola, adjunto cotización Mora Carpintería.\n\n` +
+      `N° ${e.numero || '—'}\n` +
+      `Cliente: ${e.atencionA || '—'}\n` +
+      `Obra: ${e.obra || '—'}\n` +
+      `TOTAL: ${fmt(st.totales.total)}\n\n` +
+      `Descargue el PDF desde el cotizador o solicítelo por correo.\n` +
+      `CarpinteroMora@gmail.com · +56 9 50193837`;
+  }
+
+  function abrirWhatsApp() {
+    const st = buildState();
+    const tel = '56950193837';
+    window.open(`https://wa.me/${tel}?text=${encodeURIComponent(textoWhatsApp(st))}`, '_blank');
+  }
+
+  function abrirCorreo() {
+    const st = buildState();
+    const e = st.encabezado;
+    const subject = `Cotización ${e.numero || ''} — ${e.obra || 'Mora Carpintería'}`.trim();
+    const body =
+      `Estimado/a ${e.atencionA || ''},\n\n` +
+      `Adjunto cotización N° ${e.numero || '—'} para la obra "${e.obra || '—'}".\n\n` +
+      `Resumen:\n` +
+      `- NETO: ${fmt(st.totales.neto)}\n` +
+      `- IVA (19%): ${fmt(st.totales.iva)}\n` +
+      `- TOTAL: ${fmt(st.totales.total)}\n\n` +
+      `Condiciones: Plazo 5 días hábiles · Garantía 6 meses · Anticipo 50% inicio faena.\n\n` +
+      `Genere el PDF con "Descargar PDF" en el cotizador y adjúntelo a este correo.\n\n` +
+      `Saludos cordiales,\nMarcos Mora\nCarpinteroMora@gmail.com · +56 9 50193837`;
+    window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  }
+
+  async function generarPDF(origenVista) {
+    const st = validarCotizacionParaEnvio();
+    if (!st) return;
+
+    const html = buildPdfHtml(st);
+    $('#vista-previa-contenido').innerHTML = html;
+    $('#cotizacion-pdf').innerHTML = html;
+
+    const modalAbierto = $('#modal-vista').classList.contains('modal-open');
+    const el = (origenVista || modalAbierto) ? $('#vista-previa-contenido') : $('#cotizacion-pdf');
+    const host = $('#pdf-render-host');
+
+    const btn = $('#btn-pdf');
+    const btn2 = $('#btn-pdf-desde-vista');
+    const btns = [btn, btn2].filter(Boolean);
+    btns.forEach((b) => { b.disabled = true; b.textContent = 'Generando PDF…'; });
+
+    if (el.id === 'cotizacion-pdf') {
+      host.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;width:210mm;opacity:0.01;pointer-events:none;overflow:visible;';
+    }
+
+    await new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    try {
+      if (typeof html2pdf === 'undefined') throw new Error('Librería PDF no disponible');
+      await html2pdf().set({
+        margin: [10, 10, 10, 10],
+        filename: `Cotizacion-${(st.encabezado.numero || 'Mora').replace(/[^\w-]/g, '_')}.pdf`,
+        image: { type: 'jpeg', quality: 0.95 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          scrollX: 0,
+          scrollY: 0,
+          width: el.scrollWidth || 794,
+          height: el.scrollHeight || 1123
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['css', 'legacy'] }
+      }).from(el).save();
+    } catch (err) {
+      console.error('PDF error:', err);
+      renderVistaPrevia();
+      alert('No se pudo crear el PDF automáticamente. En la vista abierta use "Imprimir" → "Guardar como PDF".');
+    } finally {
+      host.style.cssText = 'position:fixed;left:0;top:0;width:210mm;-z-50;opacity:0;pointer-events:none;overflow:hidden;';
+      btns.forEach((b) => {
+        b.disabled = false;
+        b.textContent = '📄 Descargar PDF';
+      });
+    }
+  }
+
+  function imprimirCotizacion() {
+    if (!validarCotizacionParaEnvio()) return;
+    if (!$('#modal-vista').classList.contains('modal-open')) {
+      renderVistaPrevia();
+      setTimeout(() => window.print(), 400);
+    } else {
+      window.print();
+    }
   }
 
   window.addEventListener('message', (ev) => {
@@ -944,14 +1162,16 @@
     r.readAsText(f);
     e.target.value = '';
   });
-  $('#btn-pdf').addEventListener('click', async () => {
-    const st = buildState();
-    $('#cotizacion-pdf').innerHTML = buildPdfHtml(st);
-    await html2pdf().set({
-      margin: 10, filename: `Cotizacion-${st.encabezado.numero || 'doc'}.pdf`,
-      html2canvas: { scale: 2 }, jsPDF: { unit: 'mm', format: 'a4' }
-    }).from($('#cotizacion-pdf')).save();
-  });
+  $('#btn-ver-cotizacion').addEventListener('click', renderVistaPrevia);
+  $('#btn-cerrar-vista').addEventListener('click', () => closeModal($('#modal-vista')));
+  $('#modal-vista').addEventListener('click', (e) => { if (e.target === $('#modal-vista')) closeModal($('#modal-vista')); });
+  $('#btn-pdf').addEventListener('click', () => generarPDF(false));
+  $('#btn-pdf-desde-vista').addEventListener('click', () => generarPDF(true));
+  $('#btn-imprimir').addEventListener('click', imprimirCotizacion);
+  $('#btn-whatsapp').addEventListener('click', abrirWhatsApp);
+  $('#btn-whatsapp-vista').addEventListener('click', abrirWhatsApp);
+  $('#btn-email').addEventListener('click', abrirCorreo);
+  $('#btn-email-vista').addEventListener('click', abrirCorreo);
   $('#doc-files').addEventListener('change', async (e) => {
     for (const f of e.target.files || []) {
       const b = await new Promise((res, rej) => {
@@ -966,7 +1186,13 @@
     e.target.value = '';
   });
 
-  $('#btn-proveedores').addEventListener('click', () => { renderProvList(); openModal($('#modal-prov-config')); });
+  function abrirConfigProveedores() {
+    closeModal($('#modal-picker'));
+    renderProvList();
+    openModal($('#modal-prov-config'));
+  }
+  $$('.btn-abrir-proveedores').forEach((btn) => btn.addEventListener('click', abrirConfigProveedores));
+  $('#btn-proveedores')?.addEventListener('click', abrirConfigProveedores);
   $$('.modal-prov-close,.modal-picker-close').forEach((b) => {
     b.addEventListener('click', () => {
       closeModal($('#modal-prov-config'));
@@ -988,6 +1214,7 @@
 
   if (!localStorage.getItem(LS_PROV)) localStorage.setItem(LS_PROV, JSON.stringify(DEFAULT_PROV));
   initItems();
+  bindItemsRecalc();
   initNumeracion();
   $('#fecha').value = new Date().toISOString().slice(0, 10);
   renderDocs();
