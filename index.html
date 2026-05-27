@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cotización 2026 — Mora Carpintería</title>
+  <title>Cotización 2026 — Servicios de Terminaciones de Construcción</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = { theme: { extend: { colors: { mora: { red: '#c41e3a' } } } } } };
@@ -44,9 +44,10 @@
 
     <header class="bg-white rounded-lg shadow border overflow-hidden">
       <div class="flex flex-col sm:flex-row gap-4 p-4 sm:p-6 border-b-4 border-mora-red">
-        <div>
-          <div class="text-4xl font-black text-mora-red leading-none">MORA</div>
-          <p class="text-xs text-gray-600">CarpinteroMora@gmail.com · +56 9 50193837</p>
+        <div class="max-w-md">
+          <div class="text-lg sm:text-xl font-bold text-mora-red leading-snug">Servicios de Terminaciones de Construcción</div>
+          <p class="text-xs text-gray-700 mt-1">CarpinteroMora · fono +56950193837 · Pedro Aguirre Cerda</p>
+          <p class="text-xs text-gray-500">CarpinteroMora@gmail.com</p>
         </div>
         <div class="flex-1 text-center sm:pt-2">
           <h1 class="text-2xl sm:text-3xl font-bold tracking-widest">COTIZACIÓN</h1>
@@ -54,7 +55,12 @@
         <div class="sm:w-56 flex flex-col gap-2">
           <label class="text-xs font-semibold text-gray-500 uppercase">Número</label>
           <input type="text" id="numero" class="w-full border-b-2 border-gray-800 py-1 font-semibold focus:outline-none focus:border-mora-red">
-          <button type="button" id="btn-siguiente-header" class="no-print text-xs px-2 py-1.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">🔄 Nueva cotización</button>
+          <div class="flex flex-wrap gap-2">
+            <button type="button" id="btn-guardar-header" class="no-print text-xs px-2 py-1.5 bg-mora-red text-white rounded-lg font-semibold hover:bg-red-700">💾 Guardar</button>
+            <button type="button" id="btn-mis-cotizaciones-header" class="no-print text-xs px-2 py-1.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">📂 Guardadas</button>
+            <button type="button" id="btn-siguiente-header" class="no-print text-xs px-2 py-1.5 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50">🔄 Nueva</button>
+          </div>
+          <p id="guardado-indicador" class="no-print text-[10px] text-emerald-700 font-medium hidden"></p>
         </div>
       </div>
       <div class="p-4 sm:p-6 grid gap-3 sm:grid-cols-2">
@@ -80,16 +86,44 @@
         <div>
           <h2 class="text-sm font-bold uppercase text-gray-500 mb-3">Condiciones comerciales</h2>
           <dl class="text-sm space-y-2">
-            <div class="flex justify-between border-b py-2"><dt class="font-semibold">Plazo</dt><dd>5 días hábiles</dd></div>
-            <div class="flex justify-between border-b py-2"><dt class="font-semibold">Garantía</dt><dd>6 meses</dd></div>
-            <div class="flex justify-between py-2"><dt class="font-semibold">Anticipo</dt><dd>50% inicio faena</dd></div>
+            <div class="flex justify-between border-b py-2 gap-2">
+              <dt class="font-semibold shrink-0">Plazo comercial</dt>
+              <dd class="text-right"><input type="text" id="cond-plazo" value="5 días hábiles" class="w-full max-w-[12rem] text-right border-b py-0.5 text-sm focus:outline-none focus:border-mora-red"></dd>
+            </div>
+            <div class="flex justify-between border-b py-2 gap-2">
+              <dt class="font-semibold shrink-0">Garantía</dt>
+              <dd class="text-right"><input type="text" id="cond-garantia" value="6 meses" class="w-full max-w-[12rem] text-right border-b py-0.5 text-sm focus:outline-none focus:border-mora-red"></dd>
+            </div>
           </dl>
+          <div class="mt-3 pt-3 border-t">
+            <p class="text-sm font-semibold mb-2">Anticipo <span class="font-normal text-gray-500 text-xs">(puede marcar varias opciones)</span></p>
+            <div id="anticipo-opciones" class="space-y-1.5 text-sm">
+              <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="anticipo-chk mt-0.5" data-anticipo="mat"> Valor materiales</label>
+              <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="anticipo-chk mt-0.5" data-anticipo="suma"> Suma materiales + mano de obra</label>
+              <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="anticipo-chk mt-0.5" data-anticipo="pct30"> 30% del neto</label>
+              <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="anticipo-chk mt-0.5" data-anticipo="pct40"> 40% del neto</label>
+              <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="anticipo-chk mt-0.5" data-anticipo="pct50" checked> 50% del neto — inicio faena</label>
+              <label class="flex items-start gap-2 cursor-pointer"><input type="checkbox" class="anticipo-chk mt-0.5" data-anticipo="sin"> Sin anticipo</label>
+            </div>
+            <p id="anticipo-resumen" class="mt-2 text-xs text-gray-600 italic"></p>
+          </div>
         </div>
         <div class="lg:text-right">
           <h2 class="text-sm font-bold uppercase text-gray-500 mb-3">Totales</h2>
           <div class="space-y-2 max-w-xs lg:ml-auto text-sm">
-            <div class="flex justify-between py-1 text-gray-600 text-xs"><span>Materiales + MO</span><span id="display-mat-mo" class="font-mono">$0</span></div>
-            <div class="flex justify-between py-1 text-gray-600 text-xs"><span>Transportes</span><span id="display-transportes" class="font-mono">$0</span></div>
+            <div class="flex justify-between py-1 text-gray-600 text-xs"><span>Total materiales</span><span id="display-total-mat" class="font-mono">$0</span></div>
+            <div class="flex justify-between py-1 text-gray-600 text-xs"><span>Total mano de obra</span><span id="display-total-mo" class="font-mono">$0</span></div>
+            <div class="flex justify-between py-1 text-gray-600 text-xs"><span>Total transportes</span><span id="display-transportes" class="font-mono">$0</span></div>
+            <div class="flex justify-between py-1 text-gray-600 text-xs border-t pt-1"><span>Horas hombre (total)</span><span id="display-horas" class="font-mono">—</span></div>
+            <div class="flex justify-between py-1 text-gray-600 text-xs items-center gap-2">
+              <span>Días ejecución obra</span>
+              <div class="text-right">
+                <input type="number" id="input-dias-obra" min="0" step="1" placeholder="—" title="Editable. Doble clic para volver al cálculo automático."
+                  class="w-16 text-right border rounded px-1 py-0.5 font-mono text-xs focus:outline-none focus:border-mora-red">
+                <span class="text-gray-400"> días háb.</span>
+              </div>
+            </div>
+            <p id="display-dias-calculados" class="text-[10px] text-gray-400 text-right -mt-1">Calculado: —</p>
             <div class="flex justify-between py-2 border-b font-bold"><span>NETO</span><span id="display-neto" class="font-mono text-lg">$0</span></div>
             <div class="flex justify-between py-2 border-b font-bold"><span>IVA (19%)</span><span id="display-iva" class="font-mono">$0</span></div>
             <div class="flex justify-between py-3 bg-mora-red/10 rounded px-2 font-bold text-lg">
@@ -108,8 +142,16 @@
     </section>
 
     <section class="no-print bg-white rounded-xl shadow-lg border-2 border-mora-red/30 p-4 sm:p-5 sticky bottom-4 z-20">
-      <p class="text-center text-sm font-semibold text-gray-700 mb-3">Enviar cotización al cliente</p>
+      <p class="text-center text-sm font-semibold text-gray-700 mb-3">Cotización y envío al cliente</p>
       <div class="flex flex-wrap gap-3 justify-center">
+        <button type="button" id="btn-guardar"
+          class="px-5 py-3 bg-amber-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-amber-700 min-w-[10rem]">
+          💾 Guardar cotización
+        </button>
+        <button type="button" id="btn-mis-cotizaciones"
+          class="px-5 py-3 bg-white border-2 border-amber-600 text-amber-800 rounded-xl font-bold text-sm shadow-md hover:bg-amber-50 min-w-[10rem]">
+          📂 Mis cotizaciones
+        </button>
         <button type="button" id="btn-ver-cotizacion"
           class="px-5 py-3 bg-mora-red text-white rounded-xl font-bold text-sm shadow-md hover:bg-red-700 min-w-[10rem]">
           👁 Ver cotización
@@ -195,6 +237,21 @@
     </div>
   </div>
 
+  <div id="modal-guardadas" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 no-print">
+    <div class="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+      <div class="flex justify-between items-center p-4 border-b gap-2">
+        <h3 class="font-bold">Cotizaciones guardadas en el sistema</h3>
+        <button type="button" class="modal-guardadas-close text-2xl text-gray-400 leading-none">&times;</button>
+      </div>
+      <p class="px-4 pt-2 text-xs text-gray-500">Se almacenan en este navegador (local). Use respaldo JSON para copiar a otro equipo.</p>
+      <ul id="lista-guardadas" class="p-4 overflow-y-auto flex-1 space-y-2 min-h-[120px]"></ul>
+      <div class="p-4 border-t bg-gray-50 flex flex-wrap gap-2 justify-end">
+        <button type="button" id="btn-guardar-desde-modal" class="px-4 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold hover:bg-amber-700">💾 Guardar cotización actual</button>
+        <button type="button" class="modal-guardadas-close px-4 py-2 border rounded-lg text-sm font-semibold hover:bg-gray-100">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
   <div id="modal-prov-config" class="fixed inset-0 z-50 hidden items-center justify-center p-4 bg-black/50 no-print">
     <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col">
       <div class="flex justify-between p-4 border-b">
@@ -223,11 +280,15 @@
 
   const ITEM_COUNT = 7;
   const IVA = 0.19;
+  const HORAS_JORNADA = 8;
+  const HOLGURA_OBRA = 0.25;
   const LS_NUM = 'cotizador_ultimo_numero';
   const LS_PROV = 'cotizador_proveedores';
   const LS_CTX = 'cotizador_ctx';
   const LS_INVENTARIO = 'inventario_precios';
+  const LS_GUARDADAS = 'cotizador_cotizaciones_guardadas';
   const MAX_DIAS_PRECIO = 30;
+  const MAX_COTIZACIONES_GUARDADAS = 80;
 
   const FAMILIAS_ASOC = [
     {
@@ -277,6 +338,8 @@
   let pickerItem = 0;
   let parseTargetRow = null;
   let documentacion = [];
+  let diasObraEditadoManual = false;
+  let cotizacionActivaId = null;
 
   const DEFAULT_PROV = [
     { nombre: 'Sodimac', url: 'https://sodimac.falabella.com' },
@@ -341,6 +404,11 @@
     $('#numero').value = numero;
     documentacion = [];
     renderDocs();
+    diasObraEditadoManual = false;
+    cotizacionActivaId = null;
+    actualizarIndicadorGuardado();
+    if ($('#input-dias-obra')) $('#input-dias-obra').value = '';
+    applyCondicionesForm({ plazo: '5 días hábiles', garantia: '6 meses', anticipoOpciones: ['pct50'] });
     $$('.item-section').forEach((sec) => {
       $('.item-descripcion', sec).value = '';
       $('.item-transportes', sec).value = '';
@@ -672,6 +740,160 @@
     return { mat, mo, tr, neto: netoItem };
   }
 
+  function formatDiasHabiles(dias) {
+    if (dias <= 0) return 'Por definir';
+    const d = Math.ceil(dias);
+    return d === 1 ? '1 día hábil' : `${d} días hábiles`;
+  }
+
+  function getDiasObraInput() {
+    const inp = $('#input-dias-obra');
+    if (!inp) return 0;
+    const v = parseNum(inp.value);
+    return v > 0 ? Math.ceil(v) : 0;
+  }
+
+  function getDiasEjecucionObra(resumen) {
+    const manual = getDiasObraInput();
+    if (manual > 0) return manual;
+    const r = resumen || calcResumenObra();
+    return r.diasConHolgura > 0 ? r.diasConHolgura : 0;
+  }
+
+  function syncDiasObraUi(resumen) {
+    const calcEl = $('#display-dias-calculados');
+    const inp = $('#input-dias-obra');
+    const calc = resumen.diasConHolgura > 0 ? resumen.diasConHolgura : 0;
+    if (calcEl) {
+      calcEl.textContent = resumen.totalHorasHombre > 0
+        ? `Calculado (${HORAS_JORNADA} hh/día + 25% imprev.): ${formatDiasHabiles(calc)}`
+        : 'Calculado: ingrese horas en mano de obra';
+    }
+    if (inp && !diasObraEditadoManual) {
+      inp.value = calc > 0 ? String(calc) : '';
+    }
+  }
+
+  function readAnticipoSeleccion() {
+    return $$('.anticipo-chk:checked').map((el) => el.dataset.anticipo).filter(Boolean);
+  }
+
+  function setAnticipoSeleccion(ids) {
+    const set = new Set(ids || []);
+    $$('.anticipo-chk').forEach((el) => { el.checked = set.has(el.dataset.anticipo); });
+    if (!set.size) {
+      const def = $('.anticipo-chk[data-anticipo="pct50"]');
+      if (def) def.checked = true;
+    }
+    actualizarResumenAnticipo();
+  }
+
+  function textoAnticipoOpcion(id, totales) {
+    const neto = totales?.neto ?? 0;
+    const mat = totales?.totalMateriales ?? 0;
+    const mo = totales?.totalManoDeObra ?? 0;
+    switch (id) {
+      case 'mat': return `Valor materiales: ${fmt(mat)}`;
+      case 'suma': return `Suma materiales + MO: ${fmt(mat + mo)}`;
+      case 'pct30': return `30% del neto: ${fmt(neto * 0.3)}`;
+      case 'pct40': return `40% del neto: ${fmt(neto * 0.4)}`;
+      case 'pct50': return `50% del neto (inicio faena): ${fmt(neto * 0.5)}`;
+      case 'sin': return 'Sin anticipo';
+      default: return '';
+    }
+  }
+
+  function formatAnticipoCondiciones(totales) {
+    const ids = readAnticipoSeleccion();
+    if (!ids.length) return 'Sin condición de anticipo definida';
+    return ids.map((id) => textoAnticipoOpcion(id, totales)).filter(Boolean).join(' · ');
+  }
+
+  function totalesParaAnticipo() {
+    let neto = 0;
+    $$('.item-section').forEach((s) => { neto += recalcItem(s).neto; });
+    const r = calcResumenObra();
+    return { neto, totalMateriales: r.totalMateriales, totalManoDeObra: r.totalManoDeObra };
+  }
+
+  function actualizarResumenAnticipo() {
+    const el = $('#anticipo-resumen');
+    if (!el) return;
+    el.textContent = readAnticipoSeleccion().length
+      ? formatAnticipoCondiciones(totalesParaAnticipo())
+      : 'Seleccione al menos una opción de anticipo.';
+  }
+
+  function readCondicionesForm() {
+    return {
+      plazo: ($('#cond-plazo')?.value || '5 días hábiles').trim(),
+      garantia: ($('#cond-garantia')?.value || '6 meses').trim(),
+      anticipoOpciones: readAnticipoSeleccion(),
+      diasEjecucion: getDiasObraInput() || null
+    };
+  }
+
+  function applyCondicionesForm(c) {
+    if (!c) return;
+    if ($('#cond-plazo')) $('#cond-plazo').value = c.plazo || '5 días hábiles';
+    if ($('#cond-garantia')) $('#cond-garantia').value = c.garantia || '6 meses';
+    if (c.anticipoOpciones?.length) setAnticipoSeleccion(c.anticipoOpciones);
+    else if (typeof c.anticipo === 'string' && c.anticipo) {
+      const legacy = [];
+      if (/sin\s*anticipo/i.test(c.anticipo)) legacy.push('sin');
+      if (/30\s*%/.test(c.anticipo)) legacy.push('pct30');
+      else if (/40\s*%/.test(c.anticipo)) legacy.push('pct40');
+      else if (/50\s*%/.test(c.anticipo)) legacy.push('pct50');
+      if (/material/i.test(c.anticipo)) legacy.push('mat');
+      if (legacy.length) setAnticipoSeleccion(legacy);
+    }
+    diasObraEditadoManual = c.diasEjecucion != null && c.diasEjecucion > 0;
+    if (diasObraEditadoManual && $('#input-dias-obra')) {
+      $('#input-dias-obra').value = String(c.diasEjecucion);
+    }
+  }
+
+  function calcResumenObra() {
+    let totalMateriales = 0, totalManoDeObra = 0, totalTransportes = 0, totalHoras = 0;
+    const planItems = [];
+    $$('.item-section').forEach((sec, i) => {
+      const desc = ($('.item-descripcion', sec)?.value || '').trim() || `Ítem ${i + 1}`;
+      let mat = 0, mo = 0, horasItem = 0;
+      const especialidades = [];
+      $$('.mat-row', sec).forEach((r) => {
+        mat += calc($('.mat-cantidad', r).value, $('.mat-valor', r).value);
+      });
+      $$('.mo-row', sec).forEach((r) => {
+        const h = parseNum($('.mo-horas', r).value);
+        const vh = parseNum($('.mo-valor', r).value);
+        const esp = ($('.mo-esp', r)?.value || '').trim() || 'Mano de obra';
+        horasItem += h;
+        totalHoras += h;
+        mo += calc(h, vh);
+        if (h > 0) especialidades.push(`${esp}: ${h} hh`);
+      });
+      const tr = parseNum(sec.querySelector('.item-transportes')?.value);
+      totalMateriales += mat;
+      totalManoDeObra += mo;
+      totalTransportes += tr;
+      if (mat > 0 || mo > 0 || tr > 0 || horasItem > 0) {
+        planItems.push({ indice: i + 1, desc, horas: horasItem, especialidades, mat, mo, tr });
+      }
+    });
+    const diasBaseRaw = totalHoras > 0 ? totalHoras / HORAS_JORNADA : 0;
+    const diasBase = diasBaseRaw > 0 ? Math.ceil(diasBaseRaw) : 0;
+    const diasConHolgura = diasBase > 0 ? Math.ceil(diasBaseRaw * (1 + HOLGURA_OBRA)) : 0;
+    return {
+      totalHorasHombre: totalHoras,
+      totalManoDeObra,
+      totalMateriales,
+      totalTransportes,
+      diasBase,
+      diasConHolgura,
+      planItems
+    };
+  }
+
   function recalc() {
     let neto = 0, trT = 0, matMo = 0;
     $$('.item-section').forEach((s) => {
@@ -680,15 +902,23 @@
       trT += t.tr;
       matMo += t.mat + t.mo;
     });
+    const resumen = calcResumenObra();
     const iva = neto * IVA;
     const total = neto + iva;
-    const elMatMo = $('#display-mat-mo');
-    if (elMatMo) elMatMo.textContent = fmt(matMo);
+    const elTotMat = $('#display-total-mat');
+    const elTotMo = $('#display-total-mo');
+    if (elTotMat) elTotMat.textContent = fmt(resumen.totalMateriales);
+    if (elTotMo) elTotMo.textContent = fmt(resumen.totalManoDeObra);
     $('#display-neto').textContent = fmt(neto);
     $('#display-transportes').textContent = fmt(trT);
     $('#display-iva').textContent = fmt(iva);
     $('#display-total').textContent = fmt(total);
-    return { neto, matMo, transportes: trT, iva, total };
+    const elHoras = $('#display-horas');
+    if (elHoras) elHoras.textContent = resumen.totalHorasHombre > 0 ? `${resumen.totalHorasHombre} hh` : '—';
+    syncDiasObraUi(resumen);
+    const diasEjecucion = getDiasEjecucionObra(resumen);
+    actualizarResumenAnticipo();
+    return { neto, matMo, transportes: trT, iva, total, diasEjecucion, ...resumen };
   }
 
   function proveedorPrefijo(nombre) {
@@ -849,9 +1079,9 @@
     };
   }
 
-  function buildState() {
+  function buildState(opts = {}) {
     const totales = recalc();
-    return {
+    const st = {
       version: '3.0',
       exportado: new Date().toISOString(),
       encabezado: {
@@ -862,12 +1092,189 @@
       },
       items: $$('.item-section').map((s, i) => readItem(s, i)),
       totales,
-      condiciones: { plazo: '5 días hábiles', garantia: '6 meses', anticipo: '50% inicio faena' },
-      proveedores: getProveedores(),
-      inventario_precios: getInventario(),
+      condiciones: readCondicionesForm(),
       documentacion: documentacion.map((d) => ({ ...d })),
       itemActivo: activeItem
     };
+    if (!opts.sinGlobales) {
+      st.proveedores = getProveedores();
+      st.inventario_precios = getInventario();
+    }
+    return st;
+  }
+
+  function buildStateParaGuardar() {
+    return buildState({ sinGlobales: true });
+  }
+
+  function getCotizacionesGuardadas() {
+    try {
+      const arr = JSON.parse(localStorage.getItem(LS_GUARDADAS) || '[]');
+      return Array.isArray(arr) ? arr : [];
+    } catch { return []; }
+  }
+
+  function setCotizacionesGuardadas(arr) {
+    localStorage.setItem(LS_GUARDADAS, JSON.stringify(arr));
+  }
+
+  function resumenCotizacionGuardada(entry) {
+    const e = entry.state?.encabezado || {};
+    const t = entry.state?.totales?.total ?? entry.total ?? 0;
+    return {
+      numero: entry.numero || e.numero || '—',
+      atencionA: entry.atencionA || e.atencionA || '',
+      obra: entry.obra || e.obra || '',
+      fecha: entry.fecha || e.fecha || '',
+      total: t
+    };
+  }
+
+  function actualizarIndicadorGuardado(ts) {
+    const el = $('#guardado-indicador');
+    if (!el) return;
+    if (!cotizacionActivaId && !ts) {
+      el.classList.add('hidden');
+      el.textContent = '';
+      return;
+    }
+    const lista = getCotizacionesGuardadas();
+    const item = lista.find((c) => c.id === cotizacionActivaId);
+    const cuando = ts || item?.actualizadoAt;
+    if (!cuando) {
+      el.classList.add('hidden');
+      return;
+    }
+    const d = new Date(cuando);
+    el.textContent = `✓ Guardada en el sistema · ${d.toLocaleString('es-CL')}`;
+    el.classList.remove('hidden');
+  }
+
+  function guardarCotizacionActual(silencioso) {
+    const st = buildStateParaGuardar();
+    const res = resumenCotizacionGuardada({ state: st, ...st.encabezado, total: st.totales?.total });
+    if (!res.numero || res.numero === '—') {
+      alert('Indique el número de cotización antes de guardar.');
+      return false;
+    }
+    const lista = getCotizacionesGuardadas();
+    const ahora = Date.now();
+    let item = cotizacionActivaId ? lista.find((c) => c.id === cotizacionActivaId) : null;
+    const duplicadoNum = lista.find((c) => c.numero === res.numero && c.id !== cotizacionActivaId);
+    if (duplicadoNum && !silencioso) {
+      if (!confirm(`Ya existe la cotización N° ${res.numero} guardada.\n¿Desea sobrescribirla con los datos actuales?`)) {
+        if (confirm('¿Cargar la versión guardada en su lugar?')) cargarCotizacionGuardada(duplicadoNum.id);
+        return false;
+      }
+      item = duplicadoNum;
+      cotizacionActivaId = duplicadoNum.id;
+    }
+    if (!item) {
+      if (lista.length >= MAX_COTIZACIONES_GUARDADAS) {
+        alert(`Límite de ${MAX_COTIZACIONES_GUARDADAS} cotizaciones guardadas. Elimine alguna en "Mis cotizaciones".`);
+        return false;
+      }
+      item = {
+        id: 'cot_' + ahora,
+        guardadoAt: ahora,
+        actualizadoAt: ahora,
+        state: st
+      };
+      lista.unshift(item);
+      cotizacionActivaId = item.id;
+    } else {
+      item.state = st;
+      item.actualizadoAt = ahora;
+      const idx = lista.indexOf(item);
+      if (idx > 0) {
+        lista.splice(idx, 1);
+        lista.unshift(item);
+      }
+    }
+    item.numero = res.numero;
+    item.atencionA = res.atencionA;
+    item.obra = res.obra;
+    item.fecha = res.fecha;
+    item.total = res.total;
+    try {
+      setCotizacionesGuardadas(lista);
+    } catch (err) {
+      console.error(err);
+      alert('No se pudo guardar: el almacenamiento del navegador está lleno. Reduzca archivos adjuntos o exporte respaldo JSON.');
+      return false;
+    }
+    actualizarIndicadorGuardado(ahora);
+    if (!silencioso) {
+      const msg = `Cotización N° ${res.numero} guardada en el sistema.`;
+      if ($('#modal-guardadas')?.classList.contains('modal-open')) renderListaGuardadas();
+      else alert(msg);
+    }
+    return true;
+  }
+
+  function cargarCotizacionGuardada(id) {
+    const item = getCotizacionesGuardadas().find((c) => c.id === id);
+    if (!item?.state) {
+      alert('No se encontró la cotización.');
+      return;
+    }
+    if (cotizacionActivaId && cotizacionActivaId !== id) {
+      const dirty = $('#atencionA')?.value || $('#obra')?.value;
+      if (dirty && !confirm('¿Cargar esta cotización? Se perderán los cambios no guardados del formulario actual.')) return;
+    }
+    applyState(item.state);
+    cotizacionActivaId = id;
+    actualizarIndicadorGuardado(item.actualizadoAt);
+    closeModal($('#modal-guardadas'));
+  }
+
+  function eliminarCotizacionGuardada(id) {
+    const item = getCotizacionesGuardadas().find((c) => c.id === id);
+    if (!item) return;
+    if (!confirm(`¿Eliminar del sistema la cotización N° ${item.numero || '—'}?`)) return;
+    const lista = getCotizacionesGuardadas().filter((c) => c.id !== id);
+    setCotizacionesGuardadas(lista);
+    if (cotizacionActivaId === id) {
+      cotizacionActivaId = null;
+      actualizarIndicadorGuardado();
+    }
+    renderListaGuardadas();
+  }
+
+  function renderListaGuardadas() {
+    const ul = $('#lista-guardadas');
+    if (!ul) return;
+    const lista = getCotizacionesGuardadas();
+    if (!lista.length) {
+      ul.innerHTML = '<li class="text-gray-400 text-sm italic text-center py-6">No hay cotizaciones guardadas. Use "Guardar cotización" para almacenar la actual.</li>';
+      return;
+    }
+    ul.innerHTML = lista.map((c) => {
+      const r = resumenCotizacionGuardada(c);
+      const guardado = c.actualizadoAt || c.guardadoAt;
+      const fechaGuard = guardado ? new Date(guardado).toLocaleString('es-CL') : '—';
+      const activa = c.id === cotizacionActivaId;
+      return `<li class="border rounded-lg p-3 ${activa ? 'border-amber-500 bg-amber-50' : 'hover:border-gray-400'}">
+        <div class="flex flex-wrap justify-between gap-2">
+          <div class="min-w-0 flex-1">
+            <div class="font-bold text-sm">N° ${esc(r.numero)}${activa ? ' <span class="text-amber-700 text-xs font-semibold">(abierta)</span>' : ''}</div>
+            <div class="text-xs text-gray-600 mt-0.5">${esc(r.atencionA || 'Sin cliente')} · ${esc(r.obra || 'Sin obra')}</div>
+            <div class="text-xs text-gray-500">Fecha cot.: ${esc(r.fecha || '—')} · Total ${fmt(r.total)} · Guardado: ${esc(fechaGuard)}</div>
+          </div>
+          <div class="flex flex-wrap gap-1.5 shrink-0 items-start">
+            <button type="button" data-cargar="${esc(c.id)}" class="px-2.5 py-1.5 bg-mora-red text-white rounded text-xs font-semibold hover:bg-red-700">Abrir</button>
+            <button type="button" data-eliminar="${esc(c.id)}" class="px-2.5 py-1.5 border border-red-300 text-red-700 rounded text-xs font-semibold hover:bg-red-50">Eliminar</button>
+          </div>
+        </div>
+      </li>`;
+    }).join('');
+    $$('[data-cargar]', ul).forEach((b) => b.addEventListener('click', () => cargarCotizacionGuardada(b.dataset.cargar)));
+    $$('[data-eliminar]', ul).forEach((b) => b.addEventListener('click', () => eliminarCotizacionGuardada(b.dataset.eliminar)));
+  }
+
+  function abrirMisCotizaciones() {
+    renderListaGuardadas();
+    openModal($('#modal-guardadas'));
   }
 
   function applyState(st) {
@@ -896,6 +1303,7 @@
     });
     documentacion = (st.documentacion || []).map((d) => ({ ...d }));
     renderDocs();
+    applyCondicionesForm(st.condiciones);
     setActiveItem(Math.min(Math.max(0, st.itemActivo || 0), ITEM_COUNT - 1));
     recalc();
   }
@@ -980,9 +1388,55 @@
     return st;
   }
 
+  const ENCABEZADO_EMPRESA = 'Servicios de Terminaciones de Construcción';
+  const ENCABEZADO_CONTACTO = 'CarpinteroMora · fono +56950193837 · Pedro Aguirre Cerda';
+
+  function buildResumenEjecutivoHtml(st) {
+    const r = st.totales || calcResumenObra();
+    const diasBase = r.diasBase ?? 0;
+    const diasHolgura = r.diasConHolgura ?? (diasBase > 0 ? Math.ceil(diasBase * (1 + HOLGURA_OBRA)) : 0);
+    const diasEjec = r.diasEjecucion ?? diasHolgura;
+    let planFilas = '';
+    (r.planItems || []).forEach((p) => {
+      const esp = p.especialidades?.length ? `<br><span style="font-size:9px;color:#444">${p.especialidades.map(esc).join(' · ')}</span>` : '';
+      planFilas += `<tr>
+        <td><b>${p.indice}</b></td>
+        <td>${esc(p.desc)}${esp}</td>
+        <td style="text-align:right">${p.horas > 0 ? p.horas + ' hh' : '—'}</td>
+        <td style="text-align:right">${fmt(p.mat)}</td>
+        <td style="text-align:right">${fmt(p.mo)}</td>
+        <td style="text-align:right">${fmt(p.tr)}</td>
+      </tr>`;
+    });
+    if (!planFilas) planFilas = '<tr><td colspan="6" style="text-align:center;color:#666">Sin partidas cargadas</td></tr>';
+
+    return `
+      <div style="margin:14px 0;padding:12px;border:2px solid #c41e3a;background:#fdf8f9">
+        <p style="font-size:13px;font-weight:bold;margin:0 0 10px;color:#c41e3a">RESUMEN EJECUTIVO</p>
+        <table style="font-size:11px;margin-bottom:10px">
+          <tr><td style="width:55%"><b>Total horas hombre</b></td><td style="text-align:right">${r.totalHorasHombre > 0 ? r.totalHorasHombre + ' hh' : '—'}</td></tr>
+          <tr><td><b>Valor total mano de obra</b></td><td style="text-align:right">${fmt(r.totalManoDeObra || 0)}</td></tr>
+          <tr><td><b>Valor total materiales</b></td><td style="text-align:right">${fmt(r.totalMateriales || 0)}</td></tr>
+          <tr><td><b>Total transportes</b></td><td style="text-align:right">${fmt(r.totalTransportes || 0)}</td></tr>
+        </table>
+        <p style="font-size:13px;font-weight:bold;margin:10px 0 6px">PLAN DE TRABAJO Y PLAZOS</p>
+        <table style="font-size:10px;margin-bottom:8px">
+          <tr style="background:#f3f4f6"><th>Ítem</th><th>Partida / descripción</th><th>Horas</th><th>Materiales</th><th>MO</th><th>Transp.</th></tr>
+          ${planFilas}
+        </table>
+        <table style="font-size:11px;background:#fff">
+          <tr><td><b>Duración base estimada</b> (${HORAS_JORNADA} hh/día)</td><td style="text-align:right">${r.totalHorasHombre > 0 ? formatDiasHabiles(diasBase) : 'Completar horas en mano de obra'}</td></tr>
+          <tr style="background:#fff3cd"><td><b>Duración con 25% imprevistos</b></td><td style="text-align:right;font-weight:bold">${r.totalHorasHombre > 0 ? formatDiasHabiles(diasHolgura) : '—'}</td></tr>
+          <tr style="background:#e8f5e9"><td><b>Días de ejecución de obra</b> (cotización)</td><td style="text-align:right;font-weight:bold">${diasEjec > 0 ? formatDiasHabiles(diasEjec) : 'Definir en cotizador'}</td></tr>
+          <tr><td colspan="2" style="font-size:9px;color:#555;padding-top:6px">Plazo comercial: ${esc(st.condiciones?.plazo || '5 días hábiles')}. Los días de ejecución pueden ajustarse manualmente en el cotizador según la planificación de la obra.</td></tr>
+        </table>
+      </div>`;
+  }
+
   function buildPdfHtml(st) {
     const e = st.encabezado;
     const fecha = e.fecha ? new Date(e.fecha + 'T12:00:00').toLocaleDateString('es-CL') : '—';
+    const resumenHtml = buildResumenEjecutivoHtml(st);
     let itemsH = '';
     let hayItems = false;
     st.items.forEach((it, i) => {
@@ -1008,22 +1462,35 @@
     if (!hayItems) {
       itemsH = '<p style="color:#666;font-style:italic">Sin ítems detallados en esta cotización.</p>';
     }
+    const cond = st.condiciones || {};
+    const anticipoTxt = formatAnticipoCondiciones(st.totales);
+    const diasEjec = st.totales?.diasEjecucion ?? 0;
     return `<div style="border-bottom:4px solid #c41e3a;padding-bottom:10px;margin-bottom:12px">
       <table style="width:100%;border:none"><tr>
-        <td style="border:none"><div style="font-size:32px;font-weight:900;color:#c41e3a">MORA</div></td>
+        <td style="border:none;vertical-align:top">
+          <div style="font-size:14px;font-weight:bold;color:#c41e3a;line-height:1.3">${esc(ENCABEZADO_EMPRESA)}</div>
+          <div style="font-size:10px;color:#333;margin-top:4px">${esc(ENCABEZADO_CONTACTO)}</div>
+        </td>
         <td style="border:none;text-align:center"><div class="pdf-title">COTIZACIÓN</div></td>
         <td style="border:none;text-align:right"><div>Nº <b>${esc(e.numero||'—')}</b></div></td>
       </tr></table></div>
       <p><b>Atención:</b> ${esc(e.atencionA||'—')}<br><b>Obra:</b> ${esc(e.obra||'—')}<br><b>Fecha:</b> ${fecha}</p>
+      ${resumenHtml}
+      <p style="font-size:12px;font-weight:bold;margin:12px 0 6px">DETALLE DE PARTIDAS</p>
       ${itemsH}
       <table style="margin-top:12px;width:100%;border:none"><tr>
-        <td style="border:none;vertical-align:top">Plazo: 5 días hábiles · Garantía: 6 meses · Anticipo: 50%</td>
+        <td style="border:none;vertical-align:top;font-size:10px">
+          <b>Plazo:</b> ${esc(cond.plazo || '5 días hábiles')}<br>
+          <b>Garantía:</b> ${esc(cond.garantia || '6 meses')}<br>
+          <b>Días ejecución obra:</b> ${diasEjec > 0 ? esc(formatDiasHabiles(diasEjec)) : '—'}<br>
+          <b>Anticipo:</b> ${esc(anticipoTxt)}
+        </td>
         <td style="border:none;text-align:right"><table>
           <tr><td><b>NETO</b></td><td>${fmt(st.totales.neto)}</td></tr>
           <tr><td><b>IVA 19%</b></td><td>${fmt(st.totales.iva)}</td></tr>
           <tr style="background:#fde8ec"><td><b>TOTAL</b></td><td><b>${fmt(st.totales.total)}</b></td></tr>
         </table></td></tr></table>
-      <p style="font-size:9px;color:#666;margin-top:6px">Desglose: Mat.+MO ${fmt(st.totales.matMo || 0)} · Transportes ${fmt(st.totales.transportes || 0)}</p>`;
+      <p style="font-size:9px;color:#666;margin-top:6px">Resumen: ${st.totales.totalHorasHombre || 0} hh · MO ${fmt(st.totales.totalManoDeObra || 0)} · Mat. ${fmt(st.totales.totalMateriales || 0)} · Transp. ${fmt(st.totales.transportes || 0)}</p>`;
   }
 
   function renderVistaPrevia() {
@@ -1036,13 +1503,22 @@
 
   function textoWhatsApp(st) {
     const e = st.encabezado;
-    return `Hola, adjunto cotización Mora Carpintería.\n\n` +
+    const t = st.totales;
+    const diasEjec = t.diasEjecucion || t.diasConHolgura || 0;
+    const plazo = diasEjec > 0
+      ? `Días ejecución obra: ${formatDiasHabiles(diasEjec)}`
+      : 'Plazo según condiciones comerciales';
+    const anticipo = formatAnticipoCondiciones(t);
+    return `Hola, adjunto cotización ${ENCABEZADO_EMPRESA}.\n\n` +
       `N° ${e.numero || '—'}\n` +
       `Cliente: ${e.atencionA || '—'}\n` +
       `Obra: ${e.obra || '—'}\n` +
-      `TOTAL: ${fmt(st.totales.total)}\n\n` +
-      `Descargue el PDF desde el cotizador o solicítelo por correo.\n` +
-      `CarpinteroMora@gmail.com · +56 9 50193837`;
+      `Horas hombre: ${t.totalHorasHombre || 0} hh\n` +
+      `Materiales: ${fmt(t.totalMateriales || 0)} · MO: ${fmt(t.totalManoDeObra || 0)}\n` +
+      `${plazo}\n` +
+      `Anticipo: ${anticipo}\n` +
+      `TOTAL: ${fmt(t.total)}\n\n` +
+      `${ENCABEZADO_CONTACTO}`;
   }
 
   function abrirWhatsApp() {
@@ -1054,17 +1530,28 @@
   function abrirCorreo() {
     const st = buildState();
     const e = st.encabezado;
-    const subject = `Cotización ${e.numero || ''} — ${e.obra || 'Mora Carpintería'}`.trim();
+    const subject = `Cotización ${e.numero || ''} — ${e.obra || ENCABEZADO_EMPRESA}`.trim();
+    const t = st.totales;
+    const c = st.condiciones || {};
+    const diasEjec = t.diasEjecucion || t.diasConHolgura || 0;
     const body =
       `Estimado/a ${e.atencionA || ''},\n\n` +
       `Adjunto cotización N° ${e.numero || '—'} para la obra "${e.obra || '—'}".\n\n` +
-      `Resumen:\n` +
-      `- NETO: ${fmt(st.totales.neto)}\n` +
-      `- IVA (19%): ${fmt(st.totales.iva)}\n` +
-      `- TOTAL: ${fmt(st.totales.total)}\n\n` +
-      `Condiciones: Plazo 5 días hábiles · Garantía 6 meses · Anticipo 50% inicio faena.\n\n` +
+      `Resumen ejecutivo:\n` +
+      `- Horas hombre: ${t.totalHorasHombre || 0} hh\n` +
+      `- Mano de obra: ${fmt(t.totalManoDeObra || 0)}\n` +
+      `- Materiales: ${fmt(t.totalMateriales || 0)}\n` +
+      `- Transportes: ${fmt(t.totalTransportes || 0)}\n` +
+      `- Días ejecución obra: ${diasEjec > 0 ? formatDiasHabiles(diasEjec) : 'según planificación'}\n\n` +
+      `- NETO: ${fmt(t.neto)}\n` +
+      `- IVA (19%): ${fmt(t.iva)}\n` +
+      `- TOTAL: ${fmt(t.total)}\n\n` +
+      `Condiciones:\n` +
+      `- Plazo: ${c.plazo || '5 días hábiles'}\n` +
+      `- Garantía: ${c.garantia || '6 meses'}\n` +
+      `- Anticipo: ${formatAnticipoCondiciones(t)}\n\n` +
       `Genere el PDF con "Descargar PDF" en el cotizador y adjúntelo a este correo.\n\n` +
-      `Saludos cordiales,\nMarcos Mora\nCarpinteroMora@gmail.com · +56 9 50193837`;
+      `Saludos cordiales,\nMarcos Mora\n${ENCABEZADO_CONTACTO}\nCarpinteroMora@gmail.com`;
     window.location.href = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   }
 
@@ -1158,10 +1645,26 @@
     const f = e.target.files?.[0];
     if (!f) return;
     const r = new FileReader();
-    r.onload = () => { try { applyState(JSON.parse(r.result)); } catch { alert('JSON inválido'); } };
+    r.onload = () => {
+      try {
+        applyState(JSON.parse(r.result));
+        cotizacionActivaId = null;
+        actualizarIndicadorGuardado();
+      } catch { alert('JSON inválido'); }
+    };
     r.readAsText(f);
     e.target.value = '';
   });
+  const guardarHandlers = () => guardarCotizacionActual(false);
+  $('#btn-guardar')?.addEventListener('click', guardarHandlers);
+  $('#btn-guardar-header')?.addEventListener('click', guardarHandlers);
+  $('#btn-guardar-desde-modal')?.addEventListener('click', () => {
+    if (guardarCotizacionActual(false)) renderListaGuardadas();
+  });
+  $('#btn-mis-cotizaciones')?.addEventListener('click', abrirMisCotizaciones);
+  $('#btn-mis-cotizaciones-header')?.addEventListener('click', abrirMisCotizaciones);
+  $$('.modal-guardadas-close').forEach((b) => b.addEventListener('click', () => closeModal($('#modal-guardadas'))));
+  $('#modal-guardadas')?.addEventListener('click', (e) => { if (e.target === $('#modal-guardadas')) closeModal($('#modal-guardadas')); });
   $('#btn-ver-cotizacion').addEventListener('click', renderVistaPrevia);
   $('#btn-cerrar-vista').addEventListener('click', () => closeModal($('#modal-vista')));
   $('#modal-vista').addEventListener('click', (e) => { if (e.target === $('#modal-vista')) closeModal($('#modal-vista')); });
@@ -1218,8 +1721,16 @@
   initNumeracion();
   $('#fecha').value = new Date().toISOString().slice(0, 10);
   renderDocs();
+  $$('.anticipo-chk').forEach((el) => el.addEventListener('change', actualizarResumenAnticipo));
+  $('#input-dias-obra')?.addEventListener('input', () => { diasObraEditadoManual = true; });
+  $('#input-dias-obra')?.addEventListener('dblclick', () => {
+    diasObraEditadoManual = false;
+    syncDiasObraUi(calcResumenObra());
+  });
+  actualizarResumenAnticipo();
   recalc();
 })();
   </script>
 </body>
 </html>
+
